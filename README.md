@@ -2,6 +2,8 @@
 1. 可用來觀看youtube直播IPCamera部分, 看到變化比較大的擷取時間點
 2. 可用來蒐集人形資料, 將來做裝備辨識可以使用
 3. VideoDenoise, 有些IPCamera畫質比較差, 或許有機會用上
+- 畫面中解碼有方塊
+- 畫面中在晚上容易有噪點
 
 ## TODO:
 - [] 使用Streamlink將Youtube串流變成rtsp服務, 方便持續進行分析
@@ -55,6 +57,28 @@ ffmpeg -i "https://manifest.googlevideo.com/api/manifest/hls_playlist/expire/175
 
 ## 使用ffplay撥放串流, 並且將視窗寬度限制在1280
 $ffplay -x 1280 rtsp://localhost:8554/stream
+
+
+### 將yt-dlp + ffmpeg + mediamtx組合起來放在mediamtx.yaml中
+由yt-dlp進行影像解碼後傳入ffmpeg, 由ffmpeg丟給mediamtx轉成rtsp串流
+
+ffmpeg加上-muxdelay會讓破圖情況好一些, 不過延遲會稍微長一點
+
+youtube_cam:
+    runOnDemand: >
+      sh -c 'yt-dlp -f 96 --fragment-retries 10 --retry-sleep 3 -o - "https://www.youtube.com/watch?v=UCG1aXVO8H8" |
+      ffmpeg -re -i pipe:0 -c:v copy -an -muxdelay 0.2
+      -f rtsp -rtsp_transport tcp rtsp://localhost:8554/youtube_cam'
+    # 子程序（上面這條管線）掛了就重啟
+    runOnDemandRestart: yes
+    # 等待子程序開始「成功發佈」的最長時間，超過就放棄這次（避免卡死）
+    runOnDemandStartTimeout: 15s
+    # 當最後一個讀者斷線多久後把子程序關掉（避免一直佔資源）
+    runOnDemandCloseAfter: 10s
+    #（選用）你也可在這裡加 runOnUnDemand 做收尾腳本
+
+
+
 ```
 
 
