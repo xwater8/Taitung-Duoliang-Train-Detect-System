@@ -4,6 +4,7 @@
 3. VideoDenoise, 有些IPCamera畫質比較差, 或許有機會用上
 - 畫面中解碼有方塊
 - 畫面中在晚上容易有噪點
+- 玻璃上的反光去掉
 
 ## TODO:
 - [] 使用Streamlink將Youtube串流變成rtsp服務, 方便持續進行分析
@@ -105,6 +106,23 @@ Like this LIVE CAM Nevskiy avenue St. Petersburg Russia. Невский пр. С
 https://www.youtube.com/watch?v=h1wly909BYw
 
 
+Hermosa Beach Good Stuff Strand Cam. Live Camera Stream from Southern California
+https://www.youtube.com/watch?v=yJgfAV8lXyI
+
+
+日本北海道札幌 即時影像 Live | 狸小路八条 | lofi, beats to relax
+https://www.youtube.com/watch?v=CF1vS8DdBIk
+
+
+Jackson Town Square Live PTZ webcam - SeeJH.ai
+https://www.youtube.com/watch?v=B_waF26In9o
+
+
+有線條的影片
+【LIVE】大阪 道頓堀 ライブカメラ　osaka Dotonbori LiveCamera
+https://www.youtube.com/watch?v=Nbs_WkWTD7M
+
+
 瑞光港墘
 https://tw.live/cam/?id=BOT113
 
@@ -116,3 +134,12 @@ streamlink --stream-url "https://www.twitch.tv/zrush" best
 
 yt-dlp -f 96 -o - "https://www.youtube.com/watch?v=UCG1aXVO8H8" | \
 ffmpeg -re -i pipe:0 -c:v copy -an -f rtsp -rtsp_transport tcp rtsp://localhost:8554/youtube_cam
+
+
+## 參考資料:
+Frigate_移動物體與偵測的作法
+
+https://docs.frigate-cn.video/frigate/video_pipeline#%E8%A7%86%E9%A2%91%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%BF%B0
+
+可參考這一段程式:https://github.com/blakeblackshear/frigate/blob/b1a5896b537cad54fe13bf7090b082d0214be44e/frigate/motion/frigate_motion.py#L70-L132
+
