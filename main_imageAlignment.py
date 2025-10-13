@@ -37,9 +37,12 @@ def is_frame_in_panorama(panorama_image_HW, frame_HW, transform_matrix):
 
 
 def main():
+    USE_FULL_PANORMAL_IMAGE= False
     video_path= "data/Red Pandas_20251011_1119_1200.mkv"
     video_path= "data/Red_Pands_cut.mkv"
     cap= cv2.VideoCapture(video_path)
+    
+    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
     
     assert(cap.isOpened()), "Can't open video_path: {}".format(video_path)
     
@@ -49,31 +52,84 @@ def main():
     panorama_image= None
     panorama_transform_matrix= np.eye(3)
     prev_image= None
+    frame_idx= 0
     while True:
+        frame_idx+=1
         ret, frame= cap.read()
         if not ret:
             break
         
+        if frame_idx%2==0:
+            continue
+        
         if prev_image is None:
             prev_image= frame.copy()
-            panorama_image= np.zeros((int(frame.shape[0]*1.2), int(frame.shape[1]*3), 3), dtype=np.uint8)
-            panorama_image[0:frame.shape[0], 0:frame.shape[1], :]= frame.copy()
+            if USE_FULL_PANORMAL_IMAGE:
+                panorama_image= np.zeros((int(frame.shape[0]*1.2), int(frame.shape[1]*3), 3), dtype=np.uint8)
+                panorama_image[0:frame.shape[0], -frame.shape[1]:, :]= frame.copy()
+            else:
+                panorama_image= frame.copy()
             continue
-        # process frame
-        # ...
-        transform_matrix= img_alignment.getAffineMatrix(frame, prev_image)
-        match_img= img_alignment.draw_matchPairs(frame, prev_image)
-        panorama_transform_matrix= panorama_transform_matrix @ transform_matrix
-
-        height= int(frame.shape[0]*1.2)
-        width= int(frame.shape[1]*3)
         
-        
-        copy_mask= get_imgTransform_mask(frame.shape[:2], panorama_transform_matrix, (height, width))
-        if is_frame_in_panorama(panorama_image.shape[:2], frame.shape[:2], panorama_transform_matrix):
-            print("Frame is in panorama, skip")
+        if USE_FULL_PANORMAL_IMAGE:
+            panorama_draw_image= panorama_image.copy()
+            #先撰寫簡單版本的panorama_image, 用大圖直接imageAlignment, 記得要動態擴展圖片範圍
+            transform_matrix= img_alignment.getAffineMatrix(frame, panorama_image)
+            match_img= img_alignment.draw_matchPairs(frame, panorama_draw_image)
+            
+            cv2.warpPerspective(frame, transform_matrix, (panorama_image.shape[1], panorama_image.shape[0]), panorama_image, borderMode=cv2.BORDER_TRANSPARENT)
         else:
-            print("Frame is out of panorama, stop")
+            transform_matrix= img_alignment.getAffineMatrix(frame, prev_image)
+            match_img= img_alignment.draw_matchPairs(frame, prev_image)            
+            panorama_transform_matrix= transform_matrix @ panorama_transform_matrix
+            
+            #計算轉換後的frame四個角落座標與panorama_image的座標, 判斷是否要升成一張新的大圖片
+            transform_corners= get_imgTransform_corners(frame.shape[:2], panorama_transform_matrix)#(4,2)
+            panorama_corners= np.array([[0,0], [panorama_image.shape[1],0], [panorama_image.shape[1],panorama_image.shape[0]], [0,panorama_image.shape[0]]], dtype=np.int32)#(4,2)
+            
+            all_corners= np.concatenate((transform_corners, panorama_corners), axis=0) #(8,2)
+            min_x= all_corners[:,0].min()
+            max_x= all_corners[:,0].max()
+            min_y= all_corners[:,1].min()
+            max_y= all_corners[:,1].max()
+            
+            offset_x= 0
+            offset_y= 0
+            if min_x <0:
+                offset_x= -min_x
+            if min_y <0:
+                offset_y= -min_y
+                
+            height= max_y - min_y
+            width= max_x - min_x
+            
+            if height > panorama_image.shape[0] or width > panorama_image.shape[1]:
+                print("Expand panorama_image: {}x{} -> {}x{}, offset: ({},{})".format(panorama_image.shape[1], panorama_image.shape[0], width, height, offset_x, offset_y))
+                new_panorama_image= np.zeros((height, width, 3), dtype=np.uint8)
+                offset_panorama_matrix= np.asarray([
+                    [1, 0, offset_x],
+                    [0, 1, offset_y],
+                    [0, 0, 1]
+                ], dtype=np.float32)
+                cv2.warpPerspective(panorama_image, offset_panorama_matrix, (width, height), new_panorama_image)
+                panorama_image= new_panorama_image
+                
+                panorama_transform_matrix= offset_panorama_matrix @ panorama_transform_matrix
+                cv2.warpPerspective(frame, panorama_transform_matrix, (width, height), panorama_image, borderMode=cv2.BORDER_TRANSPARENT)
+            
+            
+            #若需要生成大圖片, 也要計算panorama_image與transform_image是否要加上offset移動
+            
+
+        # height= int(frame.shape[0]*1.2)
+        # width= int(frame.shape[1]*3)
+        
+        
+        # copy_mask= get_imgTransform_mask(frame.shape[:2], panorama_transform_matrix, (height, width))
+        # if is_frame_in_panorama(panorama_image.shape[:2], frame.shape[:2], panorama_transform_matrix):
+        #     print("Frame is in panorama, skip")
+        # else:
+        #     print("Frame is out of panorama, stop")
             # transform_corners= get_imgTransform_corners(frame.shape[:2], panorama_transform_matrix)
             # min_x= transform_corners[:,0].min()
             # max_x= transform_corners[:,0].max()
@@ -96,16 +152,17 @@ def main():
             # cv2.warpPerspective(copy_mask, offset_panorama_matrix, (width, height), copy_mask)
         
         
-        transform_image= cv2.warpPerspective(frame, panorama_transform_matrix, (width, height))
+        # transform_image= cv2.warpPerspective(frame, panorama_transform_matrix, (width, height))
         
         
             # panorama_image= cv2.addWeighted(panorama_image, 0.9, transform_image, 0.1, 0)
        
-        cv2.copyTo(transform_image, copy_mask, panorama_image)
+        # cv2.copyTo(transform_image, copy_mask, panorama_image)
         
 
         prev_image= frame.copy()
         show_img("Frame", frame)
+        # show_img("panorama_image", panorama_draw_image, width= 2560, height=800)
         show_img("panorama_image", panorama_image, width= 2560, height=800)
         show_img("match_img", match_img)
         key= cv2.waitKey(1)
