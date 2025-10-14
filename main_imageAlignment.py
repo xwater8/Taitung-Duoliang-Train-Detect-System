@@ -133,5 +133,69 @@ def main():
     cv2.destroyAllWindows()
 
 
+def main_stitcher():
+    """
+    用stitcher拼起來確實很漂亮, 但是panorama_image重複拼貼的情況下會越來越模糊
+    """
+    video_path= "data/Red Pandas_20251011_1119_1200.mkv"
+    video_path= "data/Red_Pands_cut.mkv"
+    cap= cv2.VideoCapture(video_path)
+    
+    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+    
+    assert(cap.isOpened()), "Can't open video_path: {}".format(video_path)
+    
+    
+    frame_idx= 0
+    panorama_image= None
+    stitch_frames= []
+    stitch_count= 30
+    stitcher= cv2.Stitcher.create(cv2.STITCHER_SCANS)
+    stitcher.setWaveCorrection(False)
+    # pdb.set_trace()
+    # from collections import deque
+    # stitch_frames= deque(maxlen= stitch_count)
+    
+    while True:
+        frame_idx+=1
+        ret, frame= cap.read()
+        if not ret:
+            break
+        
+        if frame_idx%30!=0:
+            continue
+        
+        if panorama_image is None:
+            panorama_image= frame.copy()
+            continue
+        
+        
+        if len(stitch_frames) < stitch_count:
+            stitch_frames.append(frame.copy())
+            continue
+        
+        stitch_frames.insert(0, panorama_image)
+        
+        status, panorama_image= stitcher.stitch(stitch_frames)
+        if status==cv2.Stitcher_OK:
+            print("Stitching successful")
+        else:
+            print("Stitching failed: {}".format(status))
+
+        show_img("Frame", frame)
+        # if status==cv2.Stitcher_OK:
+        show_img("panorama_image", panorama_image, width= 2560, height=800)
+        
+        key= cv2.waitKey(1)
+        if key==27:
+            break
+        
+        stitch_frames.clear()
+        
+    cv2.destroyAllWindows()
+    cap.release()
+    
+
 if __name__=='__main__':
-    main()
+    # main()
+    main_stitcher()
