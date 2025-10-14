@@ -79,7 +79,6 @@ def main():
             
             cv2.warpPerspective(frame, transform_matrix, (panorama_image.shape[1], panorama_image.shape[0]), panorama_image, borderMode=cv2.BORDER_TRANSPARENT)
         else:
-            #BUG: 不曉得為什麼當鏡頭轉到最左邊以後就無法持續在合併了
             transform_matrix= img_alignment.getAffineMatrix(frame, prev_image)
             match_img= img_alignment.draw_matchPairs(frame, prev_image)            
             panorama_transform_matrix= transform_matrix @ panorama_transform_matrix
@@ -94,12 +93,10 @@ def main():
             min_y= all_corners[:,1].min()
             max_y= all_corners[:,1].max()
             
-            offset_x= 0
-            offset_y= 0
-            if min_x <0:
-                offset_x= -min_x
-            if min_y <0:
-                offset_y= -min_y
+            
+            #offset_x, offset_y只會有0與負值
+            offset_x= -min_x
+            offset_y= -min_y
                 
             height= max_y - min_y
             width= max_x - min_x
@@ -117,7 +114,8 @@ def main():
                 
                 panorama_transform_matrix= offset_panorama_matrix @ panorama_transform_matrix
                 cv2.warpPerspective(frame, panorama_transform_matrix, (width, height), panorama_image, borderMode=cv2.BORDER_TRANSPARENT)
-            
+            else:
+                cv2.warpPerspective(frame, panorama_transform_matrix, (panorama_image.shape[1], panorama_image.shape[0]), panorama_image, borderMode=cv2.BORDER_TRANSPARENT)
         
 
         prev_image= frame.copy()
@@ -152,6 +150,7 @@ def main_stitcher():
     stitch_count= 30
     stitcher= cv2.Stitcher.create(cv2.STITCHER_SCANS)
     stitcher.setWaveCorrection(False)
+    stitcher.setCompositingResol(1)
     # pdb.set_trace()
     # from collections import deque
     # stitch_frames= deque(maxlen= stitch_count)
@@ -197,5 +196,5 @@ def main_stitcher():
     
 
 if __name__=='__main__':
-    # main()
-    main_stitcher()
+    main()
+    # main_stitcher()
