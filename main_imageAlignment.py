@@ -59,7 +59,7 @@ def main():
         if not ret:
             break
         
-        if frame_idx%2==0:
+        if frame_idx%60!=0:
             continue
         
         if prev_image is None:
@@ -79,6 +79,7 @@ def main():
             
             cv2.warpPerspective(frame, transform_matrix, (panorama_image.shape[1], panorama_image.shape[0]), panorama_image, borderMode=cv2.BORDER_TRANSPARENT)
         else:
+            #BUG: 不曉得為什麼當鏡頭轉到最左邊以後就無法持續在合併了
             transform_matrix= img_alignment.getAffineMatrix(frame, prev_image)
             match_img= img_alignment.draw_matchPairs(frame, prev_image)            
             panorama_transform_matrix= transform_matrix @ panorama_transform_matrix
@@ -117,47 +118,6 @@ def main():
                 panorama_transform_matrix= offset_panorama_matrix @ panorama_transform_matrix
                 cv2.warpPerspective(frame, panorama_transform_matrix, (width, height), panorama_image, borderMode=cv2.BORDER_TRANSPARENT)
             
-            
-            #若需要生成大圖片, 也要計算panorama_image與transform_image是否要加上offset移動
-            
-
-        # height= int(frame.shape[0]*1.2)
-        # width= int(frame.shape[1]*3)
-        
-        
-        # copy_mask= get_imgTransform_mask(frame.shape[:2], panorama_transform_matrix, (height, width))
-        # if is_frame_in_panorama(panorama_image.shape[:2], frame.shape[:2], panorama_transform_matrix):
-        #     print("Frame is in panorama, skip")
-        # else:
-        #     print("Frame is out of panorama, stop")
-            # transform_corners= get_imgTransform_corners(frame.shape[:2], panorama_transform_matrix)
-            # min_x= transform_corners[:,0].min()
-            # max_x= transform_corners[:,0].max()
-            # min_y= transform_corners[:,1].min()
-            # max_y= transform_corners[:,1].max()
-            
-            # offset_x= 0
-            # offset_y= 0
-            # if min_x <0:
-            #     offset_x= -min_x
-            # if min_y <0:
-            #     offset_y= -min_y
-            
-            # offset_panorama_matrix= np.asarray([
-            #     [1, 0, offset_x],
-            #     [0, 1, offset_y],
-            #     [0, 0, 1]
-            # ], dtype=np.float32)
-            # cv2.warpPerspective(panorama_image, offset_panorama_matrix, (width, height), panorama_image)
-            # cv2.warpPerspective(copy_mask, offset_panorama_matrix, (width, height), copy_mask)
-        
-        
-        # transform_image= cv2.warpPerspective(frame, panorama_transform_matrix, (width, height))
-        
-        
-            # panorama_image= cv2.addWeighted(panorama_image, 0.9, transform_image, 0.1, 0)
-       
-        # cv2.copyTo(transform_image, copy_mask, panorama_image)
         
 
         prev_image= frame.copy()
