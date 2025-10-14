@@ -143,3 +143,6 @@ https://docs.frigate-cn.video/frigate/video_pipeline#%E8%A7%86%E9%A2%91%E6%B5%81
 
 可參考這一段程式:https://github.com/blakeblackshear/frigate/blob/b1a5896b537cad54fe13bf7090b082d0214be44e/frigate/motion/frigate_motion.py#L70-L132
 
+
+UAV-Image_Stitcher:
+https://github.com/sachin-vs/UAV-Image-stitching?tab=readme-ov-file
