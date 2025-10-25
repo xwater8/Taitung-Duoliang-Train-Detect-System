@@ -29,5 +29,3 @@ def get_config():
     conf.show_debug_img= False
 
     return conf
-
-    return config
