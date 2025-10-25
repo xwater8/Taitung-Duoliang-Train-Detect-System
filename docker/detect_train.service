@@ -1,0 +1,19 @@
+#樹梅派找不到Xauthority資料夾, 目前無法使用
+[Unit]
+Description=detect_train
+After=graphical.target mediamtx.service
+Requires=mediamtx.service
+
+[Service]
+#Type=simple
+#User=eray#使用者名稱必要
+#Group=eray#必要
+WorkingDirectory=/home/mingming/00.git/train_detect
+ExecStart=/usr/bin/bash run.sh
+Restart=always
+RestartSec=5
+Environment=DISPLAY=:0#請注意有些電腦是0, 有些是其他
+Environment=XAUTHORITY=/home/mingming/.Xauthority
+
+[Install]
+WantedBy=graphical.target
