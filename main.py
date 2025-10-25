@@ -80,8 +80,8 @@ def main():
         blur_img= cv2.GaussianBlur(gray_img, (5,5), 0)
         ema_denoise_frame= ema_denoise.apply(blur_img)
         diff_frame= cv2.absdiff(blur_img, ema_denoise_frame)
-        
-        th, binary_img= cv2.threshold(diff_frame, 30, 255, cv2.THRESH_BINARY)
+
+        th, binary_img= cv2.threshold(diff_frame, conf.binary_threshold, 255, cv2.THRESH_BINARY)
 
         kernel= cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
         binary_img= cv2.dilate(binary_img, kernel, binary_img)

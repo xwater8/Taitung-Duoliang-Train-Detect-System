@@ -13,6 +13,7 @@ def get_config():
     conf.video_path= "rtsp://192.168.1.108:8554/youtube_train"
     conf.resize_ratio= 0.7
     conf.output_img_root= "./output"
+    conf.binary_threshold= 50  #二值化閾值
     conf.diff_ratio_threshold= 0.35  #火車經過的變化率閾值
     
     #火車polygon座標, 1920x1080解析度下的座標
