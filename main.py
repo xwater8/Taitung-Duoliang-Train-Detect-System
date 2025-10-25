@@ -5,6 +5,11 @@ from datetime import datetime
 
 from eray_toolBox.log import LogTxt
 from eray_toolBox.utils import show_img
+from eray_toolBox.video_stream import IpcamCapture
+
+from config import get_config
+
+
 import pdb
 
 logger= LogTxt().getLogger()
@@ -29,8 +34,7 @@ def get_datetime_str():
     datetime_str = now.strftime("%Y%m%d_%H%M%S")
     return datetime_str
 
-from config import get_config
-from eray_toolBox.video_stream import IpcamCapture
+
 
 def main():    
     conf= get_config()
