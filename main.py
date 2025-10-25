@@ -1,6 +1,7 @@
 import os
 import cv2
 import numpy as np
+import time
 from datetime import datetime
 
 from eray_toolBox.log import LogTxt
@@ -73,7 +74,7 @@ def main():
         if ret==False:
             break
         frame= cv2.resize(frame, (0,0), fx=conf.resize_ratio, fy=conf.resize_ratio)
-        print("Frame_shape: {}".format(frame.shape))
+        # print("Frame_shape: {}".format(frame.shape))
         
         gray_img= cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         blur_img= cv2.GaussianBlur(gray_img, (5,5), 0)
@@ -128,9 +129,10 @@ def main():
         
         if conf.show_img:
             show_img("frame", frame)
-            show_img("ema_denoise_frame", ema_denoise_frame)
-            show_img("diff_frame", diff_frame)
-            show_img("binary_img", binary_img)
+            if conf.show_debug_img:
+                show_img("ema_denoise_frame", ema_denoise_frame)
+                show_img("diff_frame", diff_frame)
+                show_img("binary_img", binary_img)
             key = cv2.waitKey(1)
             if key==27: # ESC
                 break
@@ -139,4 +141,8 @@ def main():
     cap.release()
 
 if __name__=="__main__":
-    main()
+    try:
+        main()
+    except:
+        logger.exception("--Main Program Error, Start to restart program--")
+        time.sleep(5)

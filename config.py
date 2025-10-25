@@ -25,6 +25,7 @@ def get_config():
     conf.train_polygon[:,0]/=1920.0
     conf.train_polygon[:,1]/=1080.0
     conf.show_img= True
+    conf.show_debug_img= False
 
     return conf
 
