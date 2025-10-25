@@ -72,7 +72,9 @@ def main():
         ret, frame= cap.read()
         
         if ret==False:
-            break
+            logger.warning("Video stream can't be read, wait 2 seconds to reconnect...")
+            time.sleep(2)
+            continue
         frame= cv2.resize(frame, (0,0), fx=conf.resize_ratio, fy=conf.resize_ratio)
         # print("Frame_shape: {}".format(frame.shape))
         
