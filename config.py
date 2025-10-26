@@ -9,12 +9,18 @@ def get_config():
     # video_path="data/台東多良車站即時影像_20251010_1900_1905.mp4"
     # video_path= "/home/mingming/01.Projects/999.youtube_video_analysis/data/KC Zoo Polar Bear Cam_20251010_1519_1529.mp4"
     # video_path= "rtsp://192.168.1.108:8554/youtube_train"
-
+    # conf.video_path= "data/台東多良車站即時影像_20251026_0713.mkv"
+    # cap.set(cv2.CAP_PROP_POS_FRAMES, 8700)
+    
     conf.video_path= "rtsp://192.168.1.108:8554/youtube_train"
+    
     conf.resize_ratio= 0.7
     conf.output_img_root= "./output"
-    conf.binary_threshold= 50  #二值化閾值
-    conf.diff_ratio_threshold= 0.35  #火車經過的變化率閾值
+    conf.binary_threshold= 30  #二值化閾值
+    conf.diff_ratio_threshold= 0.1  #火車經過的變化率閾值
+    
+    conf.ssim_threshold= 0.75  #SSIM相似度閾值
+    conf.vote_count= 10  #投票法的窗口大小
     
     #火車polygon座標, 1920x1080解析度下的座標
     conf.train_polygon= np.asarray(
