@@ -17,6 +17,12 @@
 ## FFMPEG指令將圖片轉
 
 ## 紀錄:
+
+## mediamtx撥放youtube每4~5個小時就會斷線
+在mediamtx.yml中加入以下參數試試
+runOnInitRestart: yes
+
+
 ### 透過StreamLink將Youtube變成rtsp串流
 ```
 #安裝streamlink
