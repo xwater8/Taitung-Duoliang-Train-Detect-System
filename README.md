@@ -14,9 +14,13 @@
 - [] 新增RoI排除指定區域
 
 
+
 ## FFMPEG指令將圖片轉
 
 ## 紀錄:
+
+## 根據觀察誤報大部分都在ssim>0.7情況下
+因此調低conf.simm_threshold到0.7
 
 ## mediamtx撥放youtube每4~5個小時就會斷線
 在mediamtx.yml中加入以下參數試試
