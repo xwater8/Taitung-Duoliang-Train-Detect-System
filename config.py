@@ -19,7 +19,7 @@ def get_config():
     conf.binary_threshold= 30  #二值化閾值
     conf.diff_ratio_threshold= 0.1  #火車經過的變化率閾值
     
-    conf.ssim_threshold= 0.75  #SSIM相似度閾值
+    conf.ssim_threshold= 0.70  #SSIM相似度閾值
     conf.vote_count= 10  #投票法的窗口大小
     
     #火車polygon座標, 1920x1080解析度下的座標
