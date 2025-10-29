@@ -38,10 +38,10 @@ $python3 main.py
         runOnInitRestart: yes
         ```
 - [] 解決晚上的時候因為汽車大燈造成指定區域中SSIM變化過大的問題
-- [] 將background與train分開, 都存在output_root下面
+- [x] 將background與train分開, 都存在output_root下面
     - background: output_root/background
     - train: output_root/train
-    - train_ori: output_root/train_ori
+    - train_ori: output_root/train_ori(暫時不用train_ori)
 
 
 

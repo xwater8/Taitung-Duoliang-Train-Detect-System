@@ -10,7 +10,7 @@ from eray_toolBox.bbox import BBox, draw_bbox
 from eray_toolBox.log import LogTxt
 from eray_toolBox.utils import show_img
 from eray_toolBox.video_stream import IpcamCapture
-
+from eray_toolBox.utils import get_fileMainName
 
 
 
@@ -58,8 +58,8 @@ def background_subtract(blur_img, ema_denoise_frame, train_mask, train_mask_area
 
 def main():    
     conf= get_config()
-    output_img_root= conf.output_img_root
-    os.makedirs(output_img_root, exist_ok=True)
+    os.makedirs(conf.output_train_img_folder, exist_ok=True)
+    os.makedirs(conf.output_background_img_folder, exist_ok=True)
     
     video_path= conf.video_path
     cap = IpcamCapture(video_path, use_soft_decoder= True)
@@ -187,12 +187,13 @@ def main():
             if polygon_similar_score<best_ssim_img_score:
                 best_ssim_img_score= polygon_similar_score
                 best_diff_img= frame.copy()
-                best_output_img_path= os.path.join(output_img_root, "train_event_{}.jpg".format(get_datetime_str()))
+                best_output_img_path= os.path.join(conf.output_train_img_folder, "train_event_{}.jpg".format(get_datetime_str()))
                 best_background_img= ema_denoise_frame.copy()
         else:
             if best_diff_img is not None:
                 cv2.imwrite(best_output_img_path, best_diff_img)
-                background_img_path= best_output_img_path.replace("train_event_", "background_")
+                background_img_name= get_fileMainName(best_output_img_path).replace("train_event_", "background_") + ".jpg"
+                background_img_path= os.path.join(conf.output_background_img_folder, background_img_name)
                 cv2.imwrite(background_img_path, best_background_img)
                 print("Save train event image: {}, background image: {}".format(best_output_img_path, background_img_path))
                 

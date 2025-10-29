@@ -1,6 +1,7 @@
 from easydict import EasyDict
 import numpy as np
 
+import os
 
 def get_config():
     conf= EasyDict()
@@ -15,7 +16,9 @@ def get_config():
     conf.video_path= "rtsp://192.168.1.108:8554/youtube_train"
     
     conf.resize_ratio= 0.7
-    conf.output_img_root= "./output"
+    conf.output_root= "./output"
+    conf.output_train_img_folder= os.path.join(conf.output_root, "train_img")
+    conf.output_background_img_folder= os.path.join(conf.output_root, "background_img")
     conf.binary_threshold= 30  #二值化閾值
     conf.diff_ratio_threshold= 0.1  #火車經過的變化率閾值
     
