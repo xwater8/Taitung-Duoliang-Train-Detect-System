@@ -76,6 +76,7 @@ def main():
     cap = IpcamCapture(video_path, use_soft_decoder= True)
     cap.start()
     # video_path= "data/台東多良車站即時影像_20251026_0713.mkv"
+    # video_path= "data/20251107_dark_FalsePositive.mkv"
     # cap= cv2.VideoCapture(video_path)
     # cap.set(cv2.CAP_PROP_POS_FRAMES, 8700)
     
@@ -106,7 +107,7 @@ def main():
     
         
     train_event_vote= deque(maxlen= conf.vote_count)
-    prev_frame= frame.copy()
+    
     
     while True:
         ret, frame= cap.read()
@@ -130,6 +131,11 @@ def main():
         roi_train_mask= train_mask[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
         similar_score, ssim_diff_img= ssim(roi_ema_denoise_frame, roi_blur_img, full= True)
         
+        roi_gray_frame= gray_frame[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
+        th, roi_binary_frame= cv2.threshold(roi_gray_frame, conf.too_light_pixel_threshold, 255, cv2.THRESH_BINARY)
+        too_light_pixel= np.where(roi_binary_frame==255)
+        too_light_pixel_ratio= too_light_pixel[0].size / (roi_gray_frame.shape[0]*roi_gray_frame.shape[1])
+        ssim_diff_img[too_light_pixel]= 1.0  #將過亮的區域視為相似度高
         polygon_similar_score= ssim_diff_img[roi_train_mask==255].mean()
         
         
@@ -137,35 +143,16 @@ def main():
         cv2.polylines(roi_frame, [roi_train_polygon], isClosed=True, color=(0,0,255), thickness=2)
         cv2.putText(frame, "SSIM: {:.4f}".format(similar_score), (50,100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
         cv2.putText(frame, "Polygon SSIM: {:.4f}".format(polygon_similar_score), (50,150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
-        
+
+        cv2.putText(frame, "Too Light Pixel ratio: {:.4f}".format(too_light_pixel_ratio), (50,200), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
 
 
         cv2.polylines(frame, [train_polygon], isClosed=True, color=(0,0,255), thickness=2)
         draw_bbox(frame, train_mask_bbox, color=(0,255,0), thickness=2)
 
-        #使用OpticalFlow判斷火車是否經過
-        prev_gray_frame= cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
-        prev_gray_frame_after_mask= cv2.bitwise_and(prev_gray_frame, train_mask)
-        gray_frame_after_mask= cv2.bitwise_and(gray_frame, train_mask)
-        roi_gray_frame= gray_frame_after_mask[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
-        roi_prev_gray_frame= prev_gray_frame_after_mask[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
-        roi_flow = cv2.calcOpticalFlowFarneback(roi_prev_gray_frame, roi_gray_frame, None, 0.5, 2, 5, 2, 1, 1.2, 0)
-        draw_flow_arrows(roi_frame, roi_flow, step=20, scale=2, color=(0, 255, 0), thickness=1)
-        
-        # degree=0：代表向右（x 軸正方向）
-        # degree=90：代表向下（y 軸正方向）
-        # degree=180：代表向左
-        # degree=270：代表向上
-        # 所以如果你要把角度和圖像的 x,y 座標方向對應，OpenCV 的 degree 已經是依照圖像座標系統定義，不需要再做翻轉或換算。
-        mag, degree = cv2.cartToPolar(roi_flow[..., 0], roi_flow[..., 1], angleInDegrees=True)
-        
-        cv2.putText(frame, "Optical Flow Mag Max: {:.2f}".format(mag.max()), (50,200), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
-        cv2.putText(frame, "Optical Flow Mag mean: {:.2f}".format(mag[mag>=1].mean()), (50,220), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
-        
-        max_optical_flow_mag= mag.max()
         
         #SSIM similarity
-        if (polygon_similar_score<=conf.ssim_threshold) and (max_optical_flow_mag>=conf.optical_flow_threshold):
+        if (polygon_similar_score<=conf.ssim_threshold):
             logger.debug("polygon_similar_score: {:.4f}".format(polygon_similar_score))
             cv2.putText(frame, "Train Approaching_polygon_ssim!: {:.4f}".format(polygon_similar_score), (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
             train_event_vote.append(True)
@@ -201,7 +188,6 @@ def main():
                 best_background_img= None
         
         
-        prev_frame= frame.copy()
         
         if conf.show_img:
             show_img("frame", frame)
