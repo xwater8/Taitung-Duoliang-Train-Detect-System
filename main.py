@@ -64,14 +64,20 @@ def restore_normalized_polygon_points(normalized_polygon, imgHW):
     polygon= polygon.astype(np.int32)
     return polygon
 
+
+from optical_flow import draw_flow_arrows
+
 def main():    
     conf= get_config()
     os.makedirs(conf.output_train_img_folder, exist_ok=True)
     os.makedirs(conf.output_background_img_folder, exist_ok=True)
     
-    video_path= conf.video_path
-    cap = IpcamCapture(video_path, use_soft_decoder= True)
-    cap.start()
+    # video_path= conf.video_path
+    # cap = IpcamCapture(video_path, use_soft_decoder= True)
+    # cap.start()
+    video_path= "data/台東多良車站即時影像_20251026_0713.mkv"
+    cap= cv2.VideoCapture(video_path)
+    cap.set(cv2.CAP_PROP_POS_FRAMES, 8700)
     
     ema_denoise= EMA_Denoise(alpha=0.01)
     
@@ -100,6 +106,7 @@ def main():
     
         
     train_event_vote= deque(maxlen= conf.vote_count)
+    prev_frame= frame.copy()
     
     while True:
         ret, frame= cap.read()
@@ -109,16 +116,17 @@ def main():
             time.sleep(2)
             continue
         frame= cv2.resize(frame, (0,0), fx=conf.resize_ratio, fy=conf.resize_ratio)
+        
         # print("Frame_shape: {}".format(frame.shape))
         
-        gray_img= cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        blur_img= cv2.GaussianBlur(gray_img, (5,5), 0)
-        ema_denoise_frame= ema_denoise.apply(blur_img)
+        gray_frame= cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        blur_frame= cv2.GaussianBlur(gray_frame, (5,5), 0)
+        ema_denoise_frame= ema_denoise.apply(blur_frame)
         
 
         roi_frame= frame[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
         roi_ema_denoise_frame= ema_denoise_frame[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
-        roi_blur_img= blur_img[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
+        roi_blur_img= blur_frame[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
         roi_train_mask= train_mask[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
         similar_score, ssim_diff_img= ssim(roi_ema_denoise_frame, roi_blur_img, full= True)
         
@@ -135,7 +143,33 @@ def main():
         cv2.polylines(frame, [train_polygon], isClosed=True, color=(0,0,255), thickness=2)
         draw_bbox(frame, train_mask_bbox, color=(0,255,0), thickness=2)
 
-                
+        prev_gray_frame= cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
+        prev_gray_frame_after_mask= cv2.bitwise_and(prev_gray_frame, train_mask)
+        gray_frame_after_mask= cv2.bitwise_and(gray_frame, train_mask)
+        roi_gray_frame= gray_frame_after_mask[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
+        roi_prev_gray_frame= prev_gray_frame_after_mask[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
+        roi_flow = cv2.calcOpticalFlowFarneback(roi_prev_gray_frame, roi_gray_frame, None, 0.25, 1, 5, 2, 1, 1.2, 0)
+        draw_flow_arrows(roi_frame, roi_flow, step=20, scale=2, color=(0, 255, 0), thickness=1)
+        
+        # degree=0：代表向右（x 軸正方向）
+        # degree=90：代表向下（y 軸正方向）
+        # degree=180：代表向左
+        # degree=270：代表向上
+        # 所以如果你要把角度和圖像的 x,y 座標方向對應，OpenCV 的 degree 已經是依照圖像座標系統定義，不需要再做翻轉或換算。
+        mag, degree = cv2.cartToPolar(roi_flow[..., 0], roi_flow[..., 1], angleInDegrees=True)
+        
+        if mag.max() >5:
+            print("mag: {}".format(mag.max()))
+            bins= np.bincount((degree // 30).astype(np.int32).ravel(), weights=mag.ravel())
+            print(bins)
+            print("mag_mean: {}".format(mag[mag>=1].mean()))
+            # pdb.set_trace()
+        # pdb.set_trace()
+        # mag[mag<6]=0
+        cv2.putText(frame, "Optical Flow Mag Max: {:.2f}".format(mag.max()), (50,200), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
+        cv2.putText(frame, "Optical Flow Mag mean: {:.2f}".format(mag[mag>=1].mean()), (50,220), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
+        idxs= np.where(((135-15)<= degree) & (degree <= (135+15)) & (mag>0))
+        print("idxs size: {}".format(idxs[0].size))
         #SSIM similarity
         if polygon_similar_score<=conf.ssim_threshold:
             logger.debug("polygon_similar_score: {:.4f}".format(polygon_similar_score))
@@ -173,9 +207,11 @@ def main():
                 best_background_img= None
         
         
+        prev_frame= frame.copy()
+        
         if conf.show_img:
             show_img("frame", frame)
-            
+            show_img("roi_frame", roi_frame)
             if conf.show_debug_img:
                 show_img("ema_denoise_frame", ema_denoise_frame)
                 # show_img("diff_frame", diff_frame)
@@ -185,6 +221,7 @@ def main():
                 show_img("roi_blur_img", roi_blur_img)
                 show_img("ssim_diff_img", ssim_diff_img)
                 show_img("roi_train_mask", roi_train_mask)
+                show_img("roi_frame", roi_frame)
             key = cv2.waitKey(1)
             if key==27: # ESC
                 break
