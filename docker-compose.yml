@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  mediamtx:
+    build:
+      context: ./docker
+      dockerfile: mediamtx.dockerfile
+    container_name: mediamtx
+    restart: unless-stopped
+    # 可根據需求加入 port 或 volume 映射
+    ports:
+      - "8554:8554"
+    volumes:
+      - ./docker/mediamtx.yml:/mediamtx.yml
