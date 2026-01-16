@@ -24,6 +24,7 @@ def get_config():
     
     conf.ssim_threshold= 0.70  #SSIM相似度閾值
     conf.vote_count= 10  #投票法的窗口大小
+    conf.too_light_pixel_threshold= 210  #過亮像素的閾值
     
     #火車polygon座標, 1920x1080解析度下的座標
     conf.train_polygon= np.asarray(

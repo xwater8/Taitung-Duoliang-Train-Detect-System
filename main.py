@@ -56,6 +56,16 @@ def background_subtract(blur_img, ema_denoise_frame, train_mask, train_mask_area
     train_area_diff_ratio= train_road_diff_count / train_mask_area
     return train_area_diff_ratio, diff_frame, binary_img
 
+
+def restore_normalized_polygon_points(normalized_polygon, imgHW):
+    polygon= np.zeros_like(normalized_polygon)
+    polygon[:,0]= normalized_polygon[:,0]*imgHW[1]
+    polygon[:,1]= normalized_polygon[:,1]*imgHW[0]
+    polygon= polygon.astype(np.int32)
+    return polygon
+
+
+
 def main():    
     conf= get_config()
     os.makedirs(conf.output_train_img_folder, exist_ok=True)
@@ -64,19 +74,15 @@ def main():
     video_path= conf.video_path
     cap = IpcamCapture(video_path, use_soft_decoder= True)
     cap.start()
-    
+        
+        
     ema_denoise= EMA_Denoise(alpha=0.01)
-    
-    
     
     ret, frame= cap.read()
     frame= cv2.resize(frame, (0,0), fx=conf.resize_ratio, fy=conf.resize_ratio)
     
     #將normalized的座標進行還原
-    train_polygon= np.zeros_like(conf.train_polygon)
-    train_polygon[:,0]= conf.train_polygon[:,0]*frame.shape[1]
-    train_polygon[:,1]= conf.train_polygon[:,1]*frame.shape[0]
-    train_polygon= train_polygon.astype(np.int32)
+    train_polygon= restore_normalized_polygon_points(conf.train_polygon, frame.shape[:2])
     roi_train_polygon= train_polygon.copy()
     roi_train_polygon[:,0]-= int(train_polygon[:,0].min())
     roi_train_polygon[:,1]-= int(train_polygon[:,1].min())
@@ -84,20 +90,18 @@ def main():
     train_mask= np.zeros(frame.shape[:2], dtype=np.uint8)
     cv2.fillPoly(train_mask, [train_polygon], 255)
     
-    train_mask_area= cv2.contourArea(train_polygon)
-    x,y,w,h= cv2.boundingRect(train_polygon)
-    
+    x,y,w,h= cv2.boundingRect(train_polygon)    
     train_mask_bbox= BBox(x, y, x+w, y+h, 1.0, clsName='train_mask')
     
     has_train_event= False
-    best_diff_img= None
-    best_diff_img_ratio= 0.0    
+    best_diff_img= None   
     best_ssim_img_score= 100.0
     best_output_img_path= None
     best_background_img= None
     
         
     train_event_vote= deque(maxlen= conf.vote_count)
+    
     
     while True:
         ret, frame= cap.read()
@@ -107,19 +111,25 @@ def main():
             time.sleep(2)
             continue
         frame= cv2.resize(frame, (0,0), fx=conf.resize_ratio, fy=conf.resize_ratio)
+        
         # print("Frame_shape: {}".format(frame.shape))
         
-        gray_img= cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        blur_img= cv2.GaussianBlur(gray_img, (5,5), 0)
-        ema_denoise_frame= ema_denoise.apply(blur_img)
+        gray_frame= cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        blur_frame= cv2.GaussianBlur(gray_frame, (5,5), 0)
+        ema_denoise_frame= ema_denoise.apply(blur_frame)
         
 
         roi_frame= frame[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
         roi_ema_denoise_frame= ema_denoise_frame[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
-        roi_blur_img= blur_img[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
+        roi_blur_img= blur_frame[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
         roi_train_mask= train_mask[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
         similar_score, ssim_diff_img= ssim(roi_ema_denoise_frame, roi_blur_img, full= True)
         
+        roi_gray_frame= gray_frame[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
+        th, roi_binary_frame= cv2.threshold(roi_gray_frame, conf.too_light_pixel_threshold, 255, cv2.THRESH_BINARY)
+        too_light_pixel= np.where(roi_binary_frame==255)
+        too_light_pixel_ratio= too_light_pixel[0].size / (roi_gray_frame.shape[0]*roi_gray_frame.shape[1])
+        ssim_diff_img[too_light_pixel]= 1.0  #將過亮的區域視為相似度高
         polygon_similar_score= ssim_diff_img[roi_train_mask==255].mean()
         
         
@@ -127,47 +137,16 @@ def main():
         cv2.polylines(roi_frame, [roi_train_polygon], isClosed=True, color=(0,0,255), thickness=2)
         cv2.putText(frame, "SSIM: {:.4f}".format(similar_score), (50,100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
         cv2.putText(frame, "Polygon SSIM: {:.4f}".format(polygon_similar_score), (50,150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
-        
 
-        # train_area_diff_ratio, diff_frame, binary_img = background_subtract(roi_blur_img, roi_ema_denoise_frame, roi_train_mask, train_mask_area, conf)
+        cv2.putText(frame, "Too Light Pixel ratio: {:.4f}".format(too_light_pixel_ratio), (50,200), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
 
 
         cv2.polylines(frame, [train_polygon], isClosed=True, color=(0,0,255), thickness=2)
         draw_bbox(frame, train_mask_bbox, color=(0,255,0), thickness=2)
 
-        #BackGround Subtraction部分
-        #確認是否有火車經過, 並且記錄變化最大的那張圖片, 直到沒有變化的時候儲存圖片
-        # if train_area_diff_ratio>=conf.diff_ratio_threshold:
-        #     logger.debug("train_area_diff_ratio: {}".format(train_area_diff_ratio))
-        #     cv2.putText(frame, "Train Approaching!: {}".format(train_area_diff_ratio), (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
-        #     has_train_event= True
-        # else:
-        #     if has_train_event:
-        #         logger.debug("Train Leaving!: {}".format(train_area_diff_ratio))
-        #     has_train_event= False
-            
-            
-            
-        # if has_train_event:
-        #     if train_area_diff_ratio>best_diff_img_ratio:
-        #         best_diff_img_ratio= train_area_diff_ratio
-        #         best_diff_img= frame.copy()
-        #         best_output_img_path= os.path.join(output_img_root, "train_event_{}.jpg".format(get_datetime_str()))
-        #         best_background_img= ema_denoise_frame.copy()
-        # else:
-        #     if best_diff_img is not None:
-        #         cv2.imwrite(best_output_img_path, best_diff_img)
-        #         background_img_path= best_output_img_path.replace("train_event_", "background_")
-        #         cv2.imwrite(background_img_path, best_background_img)
-        #         print("Save train event image: {}, background image: {}".format(best_output_img_path, background_img_path))
-                
-        #         best_diff_img= None
-        #         best_diff_img_ratio= 0.0
-        #         best_output_img_path= None
-        #         best_background_img= None
-                
+        
         #SSIM similarity
-        if polygon_similar_score<=conf.ssim_threshold:
+        if (polygon_similar_score<=conf.ssim_threshold):
             logger.debug("polygon_similar_score: {:.4f}".format(polygon_similar_score))
             cv2.putText(frame, "Train Approaching_polygon_ssim!: {:.4f}".format(polygon_similar_score), (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
             train_event_vote.append(True)
@@ -203,13 +182,11 @@ def main():
                 best_background_img= None
         
         
+        
         if conf.show_img:
             show_img("frame", frame)
-            
             if conf.show_debug_img:
                 show_img("ema_denoise_frame", ema_denoise_frame)
-                # show_img("diff_frame", diff_frame)
-                # show_img("binary_img", binary_img)
                 show_img("roi_frame", roi_frame)
                 show_img("roi_ema_denoise_frame", roi_ema_denoise_frame)
                 show_img("roi_blur_img", roi_blur_img)
