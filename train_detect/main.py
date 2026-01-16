@@ -43,18 +43,6 @@ def get_datetime_str():
 
 
 
-def background_subtract(blur_img, ema_denoise_frame, train_mask, train_mask_area, conf):
-    diff_frame= cv2.absdiff(blur_img, ema_denoise_frame)
-
-    th, binary_img= cv2.threshold(diff_frame, conf.binary_threshold, 255, cv2.THRESH_BINARY)
-
-    kernel= cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
-    binary_img= cv2.dilate(binary_img, kernel, binary_img)
-    binary_img= cv2.erode(binary_img, kernel, binary_img)
-    
-    train_road_diff_count= np.count_nonzero(binary_img[train_mask==255])        
-    train_area_diff_ratio= train_road_diff_count / train_mask_area
-    return train_area_diff_ratio, diff_frame, binary_img
 
 
 def restore_normalized_polygon_points(normalized_polygon, imgHW):
