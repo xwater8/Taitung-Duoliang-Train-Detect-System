@@ -65,7 +65,6 @@ def restore_normalized_polygon_points(normalized_polygon, imgHW):
     return polygon
 
 
-from optical_flow import draw_flow_arrows
 
 def main():    
     conf= get_config()
@@ -75,14 +74,9 @@ def main():
     video_path= conf.video_path
     cap = IpcamCapture(video_path, use_soft_decoder= True)
     cap.start()
-    # video_path= "data/台東多良車站即時影像_20251026_0713.mkv"
-    # video_path= "data/20251107_dark_FalsePositive.mkv"
-    # cap= cv2.VideoCapture(video_path)
-    # cap.set(cv2.CAP_PROP_POS_FRAMES, 8700)
-    
+        
+        
     ema_denoise= EMA_Denoise(alpha=0.01)
-    
-    
     
     ret, frame= cap.read()
     frame= cv2.resize(frame, (0,0), fx=conf.resize_ratio, fy=conf.resize_ratio)
