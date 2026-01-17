@@ -13,7 +13,7 @@ def get_config():
     # conf.video_path= "data/台東多良車站即時影像_20251026_0713.mkv"
     # cap.set(cv2.CAP_PROP_POS_FRAMES, 8700)
     
-    conf.video_path= "rtsp://192.168.1.108:8554/youtube_train"
+    conf.video_path= "rtsp://mediamtx:8554/youtube_train"
     
     conf.resize_ratio= 0.7
     conf.output_root= "./output"

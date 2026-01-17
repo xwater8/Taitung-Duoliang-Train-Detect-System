@@ -1,0 +1,36 @@
+services:
+  mediamtx:
+    build:
+      context: ./docker
+      dockerfile: mediamtx.dockerfile
+    container_name: mediamtx
+    restart: unless-stopped
+    ports:
+      - "8554:8554"
+    volumes:
+      - ./docker/mediamtx.yml:/mediamtx.yml
+    networks:
+      - mynetwork
+
+  train_detect:
+    build:
+      context: ./
+      dockerfile: ./docker/train_detect.dockerfile
+    container_name: train_detect
+    restart: unless-stopped
+    depends_on:
+      - mediamtx
+    environment:
+      - DISPLAY=${DISPLAY}
+    ipc: host
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ./:/workspace
+      - ./output_images:/workspace/output
+    command: ["python3", "-m", "train_detect.main"]
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    driver: bridge

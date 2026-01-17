@@ -6,11 +6,10 @@ from datetime import datetime
 from skimage.metrics import structural_similarity as ssim
 from collections import deque
 
-from eray_toolBox.bbox import BBox, draw_bbox
-from eray_toolBox.log import LogTxt
-from eray_toolBox.utils import show_img
-from eray_toolBox.video_stream import IpcamCapture
-from eray_toolBox.utils import get_fileMainName
+from train_detect.toolbox.bbox import BBox, draw_bbox
+from train_detect.toolbox.log import LogTxt
+from train_detect.toolbox.utils import show_img, get_fileMainName
+from train_detect.toolbox.video_stream import IpcamCapture
 
 
 
@@ -22,7 +21,7 @@ import pdb
 logger= LogTxt().getLogger()
 
 
-class EMA_Denoise:
+class EMA_BackgroundModel:
     def __init__(self, alpha=0.1):
         self.alpha = alpha
         self.ema_frame = None
@@ -43,18 +42,6 @@ def get_datetime_str():
 
 
 
-def background_subtract(blur_img, ema_denoise_frame, train_mask, train_mask_area, conf):
-    diff_frame= cv2.absdiff(blur_img, ema_denoise_frame)
-
-    th, binary_img= cv2.threshold(diff_frame, conf.binary_threshold, 255, cv2.THRESH_BINARY)
-
-    kernel= cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
-    binary_img= cv2.dilate(binary_img, kernel, binary_img)
-    binary_img= cv2.erode(binary_img, kernel, binary_img)
-    
-    train_road_diff_count= np.count_nonzero(binary_img[train_mask==255])        
-    train_area_diff_ratio= train_road_diff_count / train_mask_area
-    return train_area_diff_ratio, diff_frame, binary_img
 
 
 def restore_normalized_polygon_points(normalized_polygon, imgHW):
@@ -72,11 +59,11 @@ def main():
     os.makedirs(conf.output_background_img_folder, exist_ok=True)
     
     video_path= conf.video_path
-    cap = IpcamCapture(video_path, use_soft_decoder= True)
+    cap = IpcamCapture(video_path)
     cap.start()
         
         
-    ema_denoise= EMA_Denoise(alpha=0.01)
+    ema_background_model= EMA_BackgroundModel(alpha=0.01)
     
     ret, frame= cap.read()
     frame= cv2.resize(frame, (0,0), fx=conf.resize_ratio, fy=conf.resize_ratio)
@@ -116,14 +103,14 @@ def main():
         
         gray_frame= cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         blur_frame= cv2.GaussianBlur(gray_frame, (5,5), 0)
-        ema_denoise_frame= ema_denoise.apply(blur_frame)
+        ema_background_frame= ema_background_model.apply(blur_frame)
         
 
         roi_frame= frame[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
-        roi_ema_denoise_frame= ema_denoise_frame[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
+        roi_ema_background_frame= ema_background_frame[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
         roi_blur_img= blur_frame[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
         roi_train_mask= train_mask[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
-        similar_score, ssim_diff_img= ssim(roi_ema_denoise_frame, roi_blur_img, full= True)
+        similar_score, ssim_diff_img= ssim(roi_ema_background_frame, roi_blur_img, full= True)
         
         roi_gray_frame= gray_frame[train_mask_bbox.ymin:train_mask_bbox.ymax, train_mask_bbox.xmin:train_mask_bbox.xmax]
         th, roi_binary_frame= cv2.threshold(roi_gray_frame, conf.too_light_pixel_threshold, 255, cv2.THRESH_BINARY)
@@ -167,7 +154,7 @@ def main():
                 best_ssim_img_score= polygon_similar_score
                 best_diff_img= frame.copy()
                 best_output_img_path= os.path.join(conf.output_train_img_folder, "train_event_{}.jpg".format(get_datetime_str()))
-                best_background_img= ema_denoise_frame.copy()
+                best_background_img= ema_background_frame.copy()
         else:
             if best_diff_img is not None:
                 cv2.imwrite(best_output_img_path, best_diff_img)
@@ -186,9 +173,9 @@ def main():
         if conf.show_img:
             show_img("frame", frame)
             if conf.show_debug_img:
-                show_img("ema_denoise_frame", ema_denoise_frame)
+                show_img("ema_background_frame", ema_background_frame)
                 show_img("roi_frame", roi_frame)
-                show_img("roi_ema_denoise_frame", roi_ema_denoise_frame)
+                show_img("roi_ema_background_frame", roi_ema_background_frame)
                 show_img("roi_blur_img", roi_blur_img)
                 show_img("ssim_diff_img", ssim_diff_img)
                 show_img("roi_train_mask", roi_train_mask)
