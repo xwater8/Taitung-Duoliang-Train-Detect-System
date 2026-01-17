@@ -6,11 +6,10 @@ from datetime import datetime
 from skimage.metrics import structural_similarity as ssim
 from collections import deque
 
-from eray_toolBox.bbox import BBox, draw_bbox
-from eray_toolBox.log import LogTxt
-from eray_toolBox.utils import show_img
-from eray_toolBox.video_stream import IpcamCapture
-from eray_toolBox.utils import get_fileMainName
+from train_detect.toolbox.bbox import BBox, draw_bbox
+from train_detect.toolbox.log import LogTxt
+from train_detect.toolbox.utils import show_img, get_fileMainName
+from train_detect.toolbox.video_stream import IpcamCapture
 
 
 
