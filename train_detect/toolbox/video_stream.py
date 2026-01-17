@@ -17,7 +17,7 @@ class IpcamCapture:
     max_retry_connect_times = -1
     retry_connect_sec = 5
     
-    def __init__(self, URL, use_soft_decoder=True):
+    def __init__(self, URL):
         """
         Initialize camera capture (software decoder only)
         
@@ -30,7 +30,6 @@ class IpcamCapture:
         self.isstop = False
         self.URL = URL
         self.capture = None
-        self.use_gstreamer = False
         self.count_reconnect = 0
         
         # Connect the camera
@@ -61,7 +60,6 @@ class IpcamCapture:
         """Connect to camera using software decoder"""
         print(f"Connecting to {self.URL} using software decoder")
         self.capture = cv2.VideoCapture(self.URL)
-        self.use_gstreamer = False
         self.status = True
         
         if not self.capture.isOpened():
@@ -93,13 +91,11 @@ class IpcamCapture:
         try:
             if self.status == False:
                 return self.status, self.black.copy()
-            
-            if not self.use_gstreamer:
-                self.read_lock.acquire()
-                self.status, self.frame = self.capture.retrieve()
-                self.read_lock.release()
-            else:
-                self.status, self.frame = self.capture.read()
+                        
+            self.read_lock.acquire()
+            self.status, self.frame = self.capture.retrieve()
+            self.read_lock.release()
+           
 
             if self.frame is not None:
                 return self.status, self.frame.copy()
@@ -115,11 +111,10 @@ class IpcamCapture:
 
     def _queryframe(self):
         """Internal thread for grabbing frames"""
-        while not self.isstop:
-            if not self.use_gstreamer:
-                self.read_lock.acquire()
-                self.status = self.capture.grab()
-                self.read_lock.release()
+        while not self.isstop:            
+            self.read_lock.acquire()
+            self.status = self.capture.grab()
+            self.read_lock.release()
             
             sleep(self.grab_time)
             self._reconnect()

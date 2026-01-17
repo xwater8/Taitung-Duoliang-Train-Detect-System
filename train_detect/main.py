@@ -59,7 +59,7 @@ def main():
     os.makedirs(conf.output_background_img_folder, exist_ok=True)
     
     video_path= conf.video_path
-    cap = IpcamCapture(video_path, use_soft_decoder= True)
+    cap = IpcamCapture(video_path)
     cap.start()
         
         
