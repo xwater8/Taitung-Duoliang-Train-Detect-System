@@ -1,8 +1,10 @@
 FROM ubuntu:22.04
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
+    && apt-get install -y \
     wget \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # 根據架構自動下載 mediamtx（已更新下載網址格式）
