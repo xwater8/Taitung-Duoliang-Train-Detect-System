@@ -26,6 +26,7 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - ./:/workspace
+      - ./output_images:/workspace/output
     command: ["python3", "-m", "train_detect.main"]
     networks:
       - mynetwork
