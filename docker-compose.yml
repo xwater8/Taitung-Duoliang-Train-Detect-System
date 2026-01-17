@@ -11,3 +11,18 @@ services:
       - "8554:8554"
     volumes:
       - ./docker/mediamtx.yml:/mediamtx.yml
+
+  train_detect:
+    build:
+      context: ./
+      dockerfile: ./docker/train_detect.dockerfile
+    container_name: train_detect
+    restart: unless-stopped
+    # 可根據需求加入 port 或 volume 映射
+    environment:
+      - DISPLAY=${DISPLAY}
+    ipc: host
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ./:/workspace
+    command: ["python3", "-m", "train_detect.main"]
