@@ -1,159 +1,90 @@
-## Introduction
-1. 可用來觀看youtube直播IPCamera部分, 看到變化比較大的擷取時間點
-2. 可用來蒐集人形資料, 將來做裝備辨識可以使用
-3. VideoDenoise, 有些IPCamera畫質比較差, 或許有機會用上
-- 畫面中解碼有方塊
-- 畫面中在晚上容易有噪點
-- 玻璃上的反光去掉
-
-## TODO:
-- [] 使用Streamlink將Youtube串流變成rtsp服務, 方便持續進行分析
-- [] 使用Background subtraction將前景移動的人物抓取下來
-- [] 使用Temporal Noise Reductionz方法降低影片雜訊
-- [] 將有物體移動的片段記錄下來存成圖片以及.csv紀錄時間
-- [] 新增RoI排除指定區域
-
-
-
-## FFMPEG指令將圖片轉
-
-## 紀錄:
-
-
-
-
-### 透過StreamLink將Youtube變成rtsp串流
-```
-#安裝streamlink
-$sudo apt-get install streamlink
-
-#將youtube透過streamlink變成串流服務
-streamlink --stdout -4 "https://www.youtube.com/watch?v=UCG1aXVO8H8" best | ffmpeg -i pipe:0 -c copy -f rtsp rtsp://localhost:8554/stream
-
-streamlink -4 --hls-live-edge 3 "https://www.youtube.com/watch?v=UCG1aXVO8H8" best
-
-streamlink --stream-url "https://www.youtube.com/watch?v=UCG1aXVO8H8"
-
-```
-
-### 透過yt-dlp將Youtube變成rtsp串流
-```
-
-#嘗試使用yt-dlp
-##透過yt-dlp獲取串流網址
-$yt-dlp -g "https://www.youtube.com/watch?v=UCG1aXVO8H8"
-
-會得到以下資訊
-
-https://manifest.googlevideo.com/api/manifest/hls_playlist/expire/1759053394/ei/8rHYaLzmJvL0pt8PjP2G8Ao/ip/123.192.232.66/id/UCG1aXVO8H8.18/itag/96/source/yt_live_broadcast/requiressl/yes/ratebypass/yes/live/1/sgoap/gir%3Dyes%3Bitag%3D140/sgovp/gir%3Dyes%3Bitag%3D137/rqh/1/hls_chunk_host/rr2---sn-3cgv-un5ez.googlevideo.com/xpc/EgVo2aDSNQ%3D%3D/playlist_duration/30/manifest_duration/30/bui/ATw7iSVenlYJTHYCuhAsyo9H-xhxZNugBCApC25ErF5UR0AtGRoPwktI7LWaMJG32kN9nhYohI1e06X8/spc/hcYD5ZeSr_Vj8AagNiVwMOy3gcyAYzDC3Ug0EaPk0cGx7PTQ1AUU8ah0j6fmmwWgbRI/vprv/1/playlist_type/DVR/initcwndbps/3726250/met/1759031794,/mh/zD/mm/44/mn/sn-3cgv-un5ez/ms/lva/mv/m/mvi/2/pl/22/rms/lva,lva/dover/11/pacing/0/keepalive/yes/fexp/51355912,51552689,51565116,51565682,51580968/mt/1759031330/sparams/expire,ei,ip,id,itag,source,requiressl,ratebypass,live,sgoap,sgovp,rqh,xpc,playlist_duration,manifest_duration,bui,spc,vprv,playlist_type/sig/AJfQdSswRAIgF9jxri0lQZtcWkYQA266Y0EsPP8e_tAoQL8KwTAJ2dcCIEfwfwbD8mIC7oCaea5PKFGh2oW356hU6YXs9uurm3TU/lsparams/hls_chunk_host,initcwndbps,met,mh,mm,mn,ms,mv,mvi,pl,rms/lsig/APaTxxMwRQIgFS8Dk4elsUS9OupouNccC33mW8vA_6KLReom1WBrs_UCIQDsadr1o5TvejURYkRJGiuB8I5gbqQUyrh4bAthHot3-A%3D%3D/playlist/index.m3u8
-
-## 透過ffmpeg將m3u8轉成rtsp後發給mediamtx
-ffmpeg -i "https://manifest.googlevideo.com/api/...../playlist/index.m3u8" \
-       -c:v copy \
-       -an \
-       -f rtsp \
-       -rtsp_transport tcp \
-       rtsp://localhost:8554/stream
-
-範例如下所示:
-ffmpeg -i "https://manifest.googlevideo.com/api/manifest/hls_playlist/expire/1759053394/ei/8rHYaLzmJvL0pt8PjP2G8Ao/ip/123.192.232.66/id/UCG1aXVO8H8.18/itag/96/source/yt_live_broadcast/requiressl/yes/ratebypass/yes/live/1/sgoap/gir%3Dyes%3Bitag%3D140/sgovp/gir%3Dyes%3Bitag%3D137/rqh/1/hls_chunk_host/rr2---sn-3cgv-un5ez.googlevideo.com/xpc/EgVo2aDSNQ%3D%3D/playlist_duration/30/manifest_duration/30/bui/ATw7iSVenlYJTHYCuhAsyo9H-xhxZNugBCApC25ErF5UR0AtGRoPwktI7LWaMJG32kN9nhYohI1e06X8/spc/hcYD5ZeSr_Vj8AagNiVwMOy3gcyAYzDC3Ug0EaPk0cGx7PTQ1AUU8ah0j6fmmwWgbRI/vprv/1/playlist_type/DVR/initcwndbps/3726250/met/1759031794,/mh/zD/mm/44/mn/sn-3cgv-un5ez/ms/lva/mv/m/mvi/2/pl/22/rms/lva,lva/dover/11/pacing/0/keepalive/yes/fexp/51355912,51552689,51565116,51565682,51580968/mt/1759031330/sparams/expire,ei,ip,id,itag,source,requiressl,ratebypass,live,sgoap,sgovp,rqh,xpc,playlist_duration,manifest_duration,bui,spc,vprv,playlist_type/sig/AJfQdSswRAIgF9jxri0lQZtcWkYQA266Y0EsPP8e_tAoQL8KwTAJ2dcCIEfwfwbD8mIC7oCaea5PKFGh2oW356hU6YXs9uurm3TU/lsparams/hls_chunk_host,initcwndbps,met,mh,mm,mn,ms,mv,mvi,pl,rms/lsig/APaTxxMwRQIgFS8Dk4elsUS9OupouNccC33mW8vA_6KLReom1WBrs_UCIQDsadr1o5TvejURYkRJGiuB8I5gbqQUyrh4bAthHot3-A%3D%3D/playlist/index.m3u8" \
-       -c:v copy \
-       -an \
-       -f rtsp \
-       -rtsp_transport tcp \
-       rtsp://localhost:8554/stream
-
-## 使用ffplay撥放串流, 並且將視窗寬度限制在1280
-$ffplay -x 1280 rtsp://localhost:8554/stream
-
-
-### 將yt-dlp + ffmpeg + mediamtx組合起來放在mediamtx.yaml中
-由yt-dlp進行影像解碼後傳入ffmpeg, 由ffmpeg丟給mediamtx轉成rtsp串流
-
-ffmpeg加上-muxdelay會讓破圖情況好一些, 不過延遲會稍微長一點
-
-youtube_cam:
-    runOnDemand: >
-      sh -c 'yt-dlp -f 96 --fragment-retries 10 --retry-sleep 3 -o - "https://www.youtube.com/watch?v=UCG1aXVO8H8" |
-      ffmpeg -re -i pipe:0 -c:v copy -an -muxdelay 0.2
-      -f rtsp -rtsp_transport tcp rtsp://localhost:8554/youtube_cam'
-    # 子程序（上面這條管線）掛了就重啟
-    runOnDemandRestart: yes
-    # 等待子程序開始「成功發佈」的最長時間，超過就放棄這次（避免卡死）
-    runOnDemandStartTimeout: 15s
-    # 當最後一個讀者斷線多久後把子程序關掉（避免一直佔資源）
-    runOnDemandCloseAfter: 10s
-    #（選用）你也可在這裡加 runOnUnDemand 做收尾腳本
-
-
-
-```
-
-
-## 分析URL問題
-```
-StreamLink取得的m3u8 URL
-https://manifest.googlevideo.com/api/manifest/hls_variant/expire/1759055116/ei/rLjYaPSBL7nk29gP7_C7mQ4/ip/123.192.232.66/id/UCG1aXVO8H8.18/source/yt_live_broadcast/requiressl/yes/xpc/EgVo2aDSNQ%3D%3D/hfr/1/playlist_duration/30/manifest_duration/30/maudio/1/bui/ATw7iSU1n8ITdmoVkqn1_RrWSzAElZnEx74nDY2G8Nt6tQg6KFvCctK5npRvrTCDaf1236P6KaxYfIAg/spc/hcYD5U9QrUvvnG2qlafrGueRynA0L2PCe0KpMV1q_1X6VCqihcsWItRBNrtBFD_aJ-0-EXzZVm0/vprv/1/go/1/rqh/5/pacing/0/nvgoi/1/ncsapi/1/keepalive/yes/fexp/51355912%2C51552689%2C51565115%2C51565682%2C51580968%2C51593650/dover/11/itag/0/playlist_type/DVR/sparams/expire%2Cei%2Cip%2Cid%2Csource%2Crequiressl%2Cxpc%2Chfr%2Cplaylist_duration%2Cmanifest_duration%2Cmaudio%2Cbui%2Cspc%2Cvprv%2Cgo%2Crqh%2Citag%2Cplaylist_type/sig/AJfQdSswRQIhAMrO-YLsFDSXy3N-LtX3GNtJU8rttio1fewYEihmBGWMAiBMSOEBYbTU3ziDZdmym_hPt4swnnIwfUCjf1CsyM9QVw%3D%3D/file/index.m3u8
-
-yt-dlp取得的m3u8 URL
-https://manifest.googlevideo.com/api/manifest/hls_playlist/expire/1759055161/ei/2bjYaL6fKr-SvcAP7sDpwQk/ip/123.192.232.66/id/UCG1aXVO8H8.18/itag/96/source/yt_live_broadcast/requiressl/yes/ratebypass/yes/live/1/sgoap/gir%3Dyes%3Bitag%3D140/sgovp/gir%3Dyes%3Bitag%3D137/rqh/1/hls_chunk_host/rr2---sn-3cgv-un5ez.googlevideo.com/xpc/EgVo2aDSNQ%3D%3D/playlist_duration/30/manifest_duration/30/bui/ATw7iSXKcDmbn9GfGbRKXApSrMrO3r4gXVecpv9qMOg0rqppzwoiJ1OJxmShS37A9iw1gMJrJw8LA8W2/spc/hcYD5Y5I0lEOZ3NvoFPYuKOSSVcaembJmNULxALlCuUeD8HiZ0LeNl2eyfq-VQc5HKc/vprv/1/playlist_type/DVR/initcwndbps/3751250/met/1759033561,/mh/zD/mm/44/mn/sn-3cgv-un5ez/ms/lva/mv/m/mvi/2/pl/22/rms/lva,lva/dover/11/pacing/0/keepalive/yes/fexp/51355912,51552689,51565116,51565681,51580968/mt/1759033256/sparams/expire,ei,ip,id,itag,source,requiressl,ratebypass,live,sgoap,sgovp,rqh,xpc,playlist_duration,manifest_duration,bui,spc,vprv,playlist_type/sig/AJfQdSswRQIhAN1O2kUSFN1pfSXGraKvasR8wDAHoRmA9PGZ8z-PvmhKAiBQiClUGg8BwY181-sQrE0dabokrG6-yu8Q4URSy3nzEA%3D%3D/lsparams/hls_chunk_host,initcwndbps,met,mh,mm,mn,ms,mv,mvi,pl,rms/lsig/APaTxxMwRQIhALhWVsfJ5gsxZETHfFD1GNolVMJOS1Eh7TJNBMwYWG8eAiBeR6RG0CeL656qJcfMD16wdWS1a6-nw8hRW5f2gM0O0w%3D%3D/playlist/index.m3u8
-```
-
-## Youtube串流來源
-KC Zoo Polar Bear Cam
-https://www.youtube.com/watch?v=BSUnBPvX9K4
-
-Trevor-Lovejoy Zoo Red Pandas LIVE
-https://www.youtube.com/watch?v=e3EP1XCH0KQ
+# Introduction-台東多良車站火車偵測系統
+本專案是來偵測台東多良車站的火車何時出現在畫面中, 方便觀察有哪些種類的火車。以及發現在youtube上有網友整理的火車時刻表, 將來或許可以取代他們。讓喜歡火車的網友可以根據時間去進行回放，以及觀察到有部分火車沒有出現在時刻表上！
 
 台東多良車站即時影像 Taitung Duoliang Station Live Camera
 https://www.youtube.com/watch?v=UCG1aXVO8H8
 
+本次挑戰在RaspberryPi上面運作, 所以嘗試使用傳統影像。
 
-Like this LIVE CAM Nevskiy avenue St. Petersburg Russia. Невский пр. Санкт-Петербург, Гостиный двор
-https://www.youtube.com/watch?v=h1wly909BYw
+本專案使用docker環境下確定可以在x86與raspberrypi 4上面正常運行
+
+![alt text](./docs/image.png)
+
+## 如何安裝與使用
+### 方法1: docker啟動服務
+```
+$xhost + #開啟xhost權限, 讓opencv視窗可以從docker內部開啟
+$docker compose up -d
+```
+
+### 方法2:使用python安裝
+
+#### youtube轉rtsp服務
+透過mediamtx、yt-dlp服務將youtube串流轉成rtsp，方便opencv進行讀取。並且配合systemctl讓服務可以自動重啟，避免死掉
+```
+#從yt-dlp github上下載執行檔, 並且放在docker資料夾中
+官網: https://github.com/yt-dlp/yt-dlp/releases/latest/download/
+
+從mediamtx官方網站下載mediamtx檔案, 並且放在docker資料夾中
+官網: https://github.com/bluenviron/mediamtx/releases/tag/v1.15.6
+
+進入到docker資料夾內部運行mediamtx, p.s須確保與mediamtx.yml在同一層目錄下
+$cd docker
+$mediamtx
+```
 
 
-Hermosa Beach Good Stuff Strand Cam. Live Camera Stream from Southern California
-https://www.youtube.com/watch?v=yJgfAV8lXyI
+#### 辨識服務
+安裝辨識環境
+```
+# 建立虛擬環境
+$pip3 install virtualenv
+$virtualenv venv
+$source ./venv/bin/activate
+
+# 安裝辨識所需環境
+$source ./venv/bin/activate
+$pip3 install docker/requirements.txt
+```
+
+開啟辨識服務
+```
+$source ./venv/bin/activate
+$python3 main.py
+```
+
+## 系統說明
+1. 透過yt-dlp將youtube直播轉成串流, 並且透過mediamtx輸出成rtsp串流供opencv使用
+2. opencv讀取mediamtx輸出的串流
+3. 透過EMA_BackgroundModel建立畫面背景圖
+4. 使用SSIM演算法比較background_frame與 frame的差異, 判斷出在指定polygon區域中是否有變化
+5. 若變化超過一定的門檻值認為是有火車, 否則視為正常。 會進行連續判斷並且挑選變化最大的圖片作為火車圖片。 並且判斷圖片中的區域是否過亮, 若過亮被排除在計算相似度分數的範圍外。
 
 
-日本北海道札幌 即時影像 Live | 狸小路八条 | lofi, beats to relax
-https://www.youtube.com/watch?v=CF1vS8DdBIk
+## TODO:
+- [x] 根據觀察誤報大部分都在ssim>0.7情況下
+    - 因此調低conf.simm_threshold到0.7-->有效果
+- [x] mediamtx撥放youtube每4~5個小時就會斷線
+    - 在mediamtx.yml中加入以下參數試試-->有效果
+        ```
+        runOnInitRestart: yes
+        ```
+- [] 解決晚上的時候因為汽車大燈造成指定區域中SSIM變化過大的問題
+- [x] 將background與train分開, 都存在output_root下面
+    - background: output_root/background
+    - train: output_root/train
+    - train_ori: output_root/train_ori(暫時不用train_ori)
 
-
-Jackson Town Square Live PTZ webcam - SeeJH.ai
-https://www.youtube.com/watch?v=B_waF26In9o
-
-
-有線條的影片
-【LIVE】大阪 道頓堀 ライブカメラ　osaka Dotonbori LiveCamera
-https://www.youtube.com/watch?v=Nbs_WkWTD7M
-
-
-瑞光港墘
-https://tw.live/cam/?id=BOT113
-
-twitch直播
-https://www.twitch.tv/zrush
-
-streamlink --stream-url "https://www.twitch.tv/zrush" best
-
-
-yt-dlp -f 96 -o - "https://www.youtube.com/watch?v=UCG1aXVO8H8" | \
-ffmpeg -re -i pipe:0 -c:v copy -an -f rtsp -rtsp_transport tcp rtsp://localhost:8554/youtube_cam
 
 
 ## 參考資料:
+多良車站班次:
+https://fullfenblog.tw/2016-08-14-628/#%E5%A4%9A%E8%89%AF%E8%BB%8A%E7%AB%99%EF%BD%9C%E6%9C%80%E6%96%B0%E7%81%AB%E8%BB%8A%E9%80%9A%E8%A1%8C%E6%99%82%E5%88%BB%E8%A1%A8
+
+
 Frigate_移動物體與偵測的作法
 
 https://docs.frigate-cn.video/frigate/video_pipeline#%E8%A7%86%E9%A2%91%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%BF%B0
 
 可參考這一段程式:https://github.com/blakeblackshear/frigate/blob/b1a5896b537cad54fe13bf7090b082d0214be44e/frigate/motion/frigate_motion.py#L70-L132
 
-
-UAV-Image_Stitcher:
-https://github.com/sachin-vs/UAV-Image-stitching?tab=readme-ov-file
-
-多良車站班次:
-https://fullfenblog.tw/2016-08-14-628/#%E5%A4%9A%E8%89%AF%E8%BB%8A%E7%AB%99%EF%BD%9C%E6%9C%80%E6%96%B0%E7%81%AB%E8%BB%8A%E9%80%9A%E8%A1%8C%E6%99%82%E5%88%BB%E8%A1%A8
