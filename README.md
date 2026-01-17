@@ -61,6 +61,39 @@ $python3 main.py
 5. 若變化超過一定的門檻值認為是有火車, 否則視為正常。 會進行連續判斷並且挑選變化最大的圖片作為火車圖片。 並且判斷圖片中的區域是否過亮, 若過亮被排除在計算相似度分數的範圍外。
 
 
+## config.py 參數說明
+
+本專案透過 `config.py` 的 `get_config()` 函式統一管理所有參數設定。主要配置項目如下：
+
+### 資料來源與輸出
+
+- **video_path**：影片來源，可為本地路徑或 RTSP 串流（如 `rtsp://mediamtx:8554/youtube_train`）
+- **resize_ratio**：影像縮放比例（預設 0.7）
+- **output_root**：輸出資料夾根目錄（預設 `./output`）
+- **output_train_img_folder**：檢測到火車時的圖片保存路徑
+- **output_background_img_folder**：背景圖片保存路徑
+
+### 演算法參數
+
+- **binary_threshold**：二值化處理的閾值（預設 30），用於前景背景分離
+- **diff_ratio_threshold**：畫面變化率判斷火車經過的門檻（預設 0.1）
+- **ssim_threshold**：SSIM 相似度門檻（預設 0.70），低於此值判定為火車經過
+- **vote_count**：投票法窗口大小（預設 10），用於平滑化判斷結果，減少誤報
+- **too_light_pixel_threshold**：過亮像素判斷閾值（預設 210），過亮區域不納入相似度計算
+
+### 火車偵測區域
+
+- **train_polygon**：火車偵測區域的多邊形座標，以 1920×1080 解析度正規化（左上、右上、右下、左下四個頂點），僅在此區域內檢測火車
+
+### 顯示選項
+
+- **show_img**：是否顯示主處理畫面（預設 True）
+- **show_debug_img**：是否顯示除錯畫面（預設 False）
+
+根據實際使用環境，可調整上述參數以優化偵測效果。
+
+
+
 ## TODO:
 - [x] 根據觀察誤報大部分都在ssim>0.7情況下
     - 因此調低conf.simm_threshold到0.7-->有效果
@@ -87,4 +120,5 @@ Frigate_移動物體與偵測的作法
 https://docs.frigate-cn.video/frigate/video_pipeline#%E8%A7%86%E9%A2%91%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%BF%B0
 
 可參考這一段程式:https://github.com/blakeblackshear/frigate/blob/b1a5896b537cad54fe13bf7090b082d0214be44e/frigate/motion/frigate_motion.py#L70-L132
+
 
