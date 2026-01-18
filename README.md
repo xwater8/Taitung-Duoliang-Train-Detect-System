@@ -10,6 +10,9 @@ https://www.youtube.com/watch?v=UCG1aXVO8H8
 
 ![alt text](./docs/image.png)
 
+[Youtube影片](https://youtu.be/V8ZHeCWi8-8)
+
+
 ## 如何安裝與使用
 ### 方法1: docker啟動服務
 ```
