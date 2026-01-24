@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台東多良車站火車偵測系統</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 標題區 -->
+        <header class="header">
+            <h1>🚂 台東多良車站火車偵測系統</h1>
+            <p class="subtitle">Train Detection System at Duoliang Station, Taitung</p>
+        </header>
+
+        <!-- 統計資訊區 -->
+        <div class="stats-panel">
+            <div class="stat-card">
+                <div class="stat-value" id="totalCount">-</div>
+                <div class="stat-label">總偵測次數</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="todayCount">-</div>
+                <div class="stat-label">今日偵測次數</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="lastUpdateTime">-</div>
+                <div class="stat-label">最後更新時間</div>
+            </div>
+        </div>
+
+        <!-- 搜尋過濾區 -->
+        <div class="search-panel">
+            <div class="search-group">
+                <label for="searchDate">日期篩選：</label>
+                <input type="date" id="searchDate" placeholder="選擇日期">
+            </div>
+            <div class="search-group">
+                <label for="searchKeyword">關鍵字：</label>
+                <input type="text" id="searchKeyword" placeholder="搜尋備註內容">
+            </div>
+            <div class="search-actions">
+                <button id="searchBtn" class="btn btn-primary">🔍 搜尋</button>
+                <button id="resetBtn" class="btn btn-secondary">↻ 重置</button>
+                <button id="refreshBtn" class="btn btn-success">⟳ 重新載入</button>
+            </div>
+        </div>
+
+        <!-- 載入狀態 -->
+        <div id="loadingIndicator" class="loading-indicator">
+            <div class="spinner"></div>
+            <p>載入資料中...</p>
+        </div>
+
+        <!-- 錯誤訊息 -->
+        <div id="errorMessage" class="error-message" style="display: none;">
+            <span class="error-icon">⚠️</span>
+            <span id="errorText"></span>
+        </div>
+
+        <!-- 資料表格區 -->
+        <div class="table-container">
+            <table id="detectionTable">
+                <thead>
+                    <tr>
+                        <th>序號</th>
+                        <th>日期</th>
+                        <th>時間</th>
+                        <th>火車圖片</th>
+                        <th>備註</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- 資料將由 JavaScript 動態填入 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 無資料提示 -->
+        <div id="noDataMessage" class="no-data-message" style="display: none;">
+            <p>📭 目前沒有符合條件的資料</p>
+        </div>
+
+        <!-- 頁尾 -->
+        <footer class="footer">
+            <p>© 2026 台東多良車站火車偵測系統 | 資料來源：Google Sheets + imgur</p>
+            <p class="footer-note">本系統使用 SSIM 演算法進行火車偵測</p>
+        </footer>
+    </div>
+
+    <!-- 圖片燈箱 -->
+    <div id="lightbox" class="lightbox" style="display: none;">
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-content" id="lightboxImg">
+        <div id="lightboxCaption"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

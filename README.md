@@ -1,16 +1,37 @@
-# Introduction-台東多良車站火車偵測系統
-本專案是來偵測台東多良車站的火車何時出現在畫面中, 方便觀察有哪些種類的火車。以及發現在youtube上有網友整理的火車時刻表, 將來或許可以取代他們。讓喜歡火車的網友可以根據時間去進行回放，以及觀察到有部分火車沒有出現在時刻表上！
+# Introduction - 台東多良車站火車偵測系統
+
+本專案是來偵測台東多良車站的火車何時出現在畫面中，方便觀察有哪些種類的火車。以及發現在 YouTube 上有網友整理的火車時刻表，將來或許可以取代他們。讓喜歡火車的網友可以根據時間去進行回放，以及觀察到有部分火車沒有出現在時刻表上！
 
 台東多良車站即時影像 Taitung Duoliang Station Live Camera
 https://www.youtube.com/watch?v=UCG1aXVO8H8
 
-本次挑戰在RaspberryPi上面運作, 所以嘗試使用傳統影像。
+本次挑戰在 RaspberryPi 上面運作，所以嘗試使用傳統影像處理。
 
-本專案使用docker環境下確定可以在x86與raspberrypi 4上面正常運行
+本專案使用 Docker 環境下確定可以在 x86 與 Raspberry Pi 4 上面正常運行
 
 ![alt text](./docs/image.png)
 
-[Youtube影片](https://youtu.be/V8ZHeCWi8-8)
+[Youtube 影片](https://youtu.be/V8ZHeCWi8-8)
+
+## 專案結構
+
+```
+train_detect/
+├── web/                         # 前端網頁儀表板
+│   ├── index.html               # 主要頁面
+│   ├── app.js                   # JavaScript 邏輯
+│   ├── styles.css               # CSS 樣式
+│   ├── README.md                # 前端說明
+│   └── DEPLOYMENT.md            # 部署指南
+├── train_detect/                # 後端偵測系統
+│   ├── main.py                  # 主程式
+│   ├── uploader.py              # 上傳模組
+│   └── toolbox/                 # 工具函式庫
+├── docker/                      # Docker 相關檔案
+├── config.py                    # 設定檔
+├── README.md                    # 本檔案
+└── ...
+```
 
 
 ## 如何安裝與使用
