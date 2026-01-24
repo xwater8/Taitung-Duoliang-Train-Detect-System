@@ -13,6 +13,8 @@ https://www.youtube.com/watch?v=UCG1aXVO8H8
 
 [Youtube 影片](https://youtu.be/V8ZHeCWi8-8)
 
+[報表系統網址](https://xwater8.github.io/Taitung-Duoliang-Train-Detect-System/)
+
 ## 專案結構
 
 ```
