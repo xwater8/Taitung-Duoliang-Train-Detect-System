@@ -83,15 +83,25 @@ def test_upload():
     print(f"   圖片路徑: {test_image_path}")
     print(f"   圖片大小: {os.path.getsize(test_image_path) / 1024:.2f} KB")
     
+    # 生成測試編號和詳細資訊
+    test_timestamp = datetime.now()
+    test_id = test_timestamp.strftime("%Y%m%d_%H%M%S")
+    test_note = f'🧪 測試上傳 #{test_id} - 測試功能驗證（含縮圖）'
+    
+    print(f"   測試編號: {test_id}")
+    print(f"   測試時間: {test_timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"   測試備註: {test_note}")
+    
     result = uploader.upload_train_event(
         image_path=test_image_path,
-        timestamp=datetime.now(),
-        note='測試上傳 - 自動化測試'
+        timestamp=test_timestamp,
+        note=test_note
     )
     
     print("\n6. 測試結果：")
     print(f"   - 整體成功: {'是 ✓' if result['success'] else '否 ✗'}")
     print(f"   - 圖片 URL: {result.get('image_url', 'N/A')}")
+    print(f"   - 縮圖 URL: {result.get('thumbnail_url', 'N/A')}")
     print(f"   - Sheet 已更新: {'是 ✓' if result.get('sheet_updated') else '否 ✗'}")
     
     if result.get('errors'):
