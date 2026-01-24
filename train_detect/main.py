@@ -10,6 +10,7 @@ from train_detect.toolbox.bbox import BBox, draw_bbox
 from train_detect.toolbox.log import LogTxt
 from train_detect.toolbox.utils import show_img, get_fileMainName
 from train_detect.toolbox.video_stream import IpcamCapture
+from train_detect.uploader import TrainDetectionUploader
 
 
 
@@ -55,6 +56,25 @@ def restore_normalized_polygon_points(normalized_polygon, imgHW):
 
 def main():    
     conf= get_config()
+    
+    # 初始化上傳器
+    uploader = None
+    if conf.enable_upload:
+        try:
+            uploader = TrainDetectionUploader(
+                imgbb_api_key=conf.imgbb_api_key,
+                gsheet_credentials_path=conf.gsheet_credentials_path,
+                gsheet_spreadsheet_id=conf.gsheet_spreadsheet_id,
+                gsheet_worksheet_name=conf.gsheet_worksheet_name
+            )
+            print("✓ Upload功能已啟用")
+        except Exception as e:
+            print(f"✗ 初始化上傳器失敗: {e}")
+            print("將繼續執行，但不會上傳資料")
+            uploader = None
+    else:
+        print("Upload功能已停用（僅本地儲存）")
+    
     os.makedirs(conf.output_train_img_folder, exist_ok=True)
     os.makedirs(conf.output_background_img_folder, exist_ok=True)
     
@@ -162,6 +182,21 @@ def main():
                 background_img_path= os.path.join(conf.output_background_img_folder, background_img_name)
                 cv2.imwrite(background_img_path, best_background_img)
                 print("Save train event image: {}, background image: {}".format(best_output_img_path, background_img_path))
+                
+                # 上傳至雲端
+                if uploader is not None:
+                    try:
+                        upload_result = uploader.upload_train_event(
+                            image_path=best_output_img_path,
+                            timestamp=datetime.now(),
+                            note='台東多良車站'
+                        )
+                        if upload_result['success']:
+                            print(f"✓ 上傳成功: {upload_result['image_url']}")
+                        else:
+                            print(f"✗ 上傳失敗: {upload_result['errors']}")
+                    except Exception as e:
+                        print(f"✗ 上傳過程發生錯誤: {e}")
                 
                 best_diff_img= None
                 best_ssim_img_score= 100.0

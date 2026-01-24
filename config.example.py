@@ -39,12 +39,35 @@ def get_config():
     conf.show_debug_img= False
     
     # API 配置 - 從環境變數讀取
+    # 使用方式：
+    # 1. 在系統中設定環境變數，或
+    # 2. 在 Docker Compose 中設定環境變數
+    # 3. 使用 .env 檔案（需安裝 python-dotenv）
+    
+    # imgbb API Key
+    # 取得方式：
+    # 1. 註冊 https://imgbb.com/
+    # 2. 前往 https://api.imgbb.com/ 取得 API Key
     conf.imgbb_api_key = os.environ.get('IMGBB_API_KEY', '')
+    
+    # Google Sheets Service Account 金鑰檔案路徑
+    # 取得方式：
+    # 1. 前往 Google Cloud Console (https://console.cloud.google.com/)
+    # 2. 建立專案並啟用 Google Sheets API 和 Google Drive API
+    # 3. 建立 Service Account 並下載 JSON 金鑰檔案
+    # 4. 將金鑰檔案放在專案目錄並設定路徑
     conf.gsheet_credentials_path = os.environ.get('GSHEET_CREDENTIALS_PATH', './credentials.json')
+    
+    # Google Spreadsheet ID
+    # 從 Google Sheets 網址取得：
+    # https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit
     conf.gsheet_spreadsheet_id = os.environ.get('GSHEET_SPREADSHEET_ID', '')
+    
+    # Google Sheets 工作表名稱
     conf.gsheet_worksheet_name = os.environ.get('GSHEET_WORKSHEET_NAME', '工作表1')
     
     # 上傳功能開關
+    # 設定為 'true' 啟用上傳，'false' 停用（僅本地儲存）
     conf.enable_upload = os.environ.get('ENABLE_UPLOAD', 'false').lower() == 'true'
 
     return conf

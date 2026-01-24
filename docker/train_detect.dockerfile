@@ -4,6 +4,7 @@ RUN pip3 install -r /git/requirements.txt
 
 
 RUN apt-get update && apt-get install -y \
+    tzdata \
     libgl1 \
     libglib2.0-0 \
     libxkbcommon-x11-0 \

@@ -7,6 +7,8 @@ services:
     restart: unless-stopped
     ports:
       - "8554:8554"
+    environment:
+      - TZ=Asia/Taipei
     volumes:
       - ./docker/mediamtx.yml:/mediamtx.yml
     networks:
@@ -20,13 +22,17 @@ services:
     restart: unless-stopped
     depends_on:
       - mediamtx
+    env_file:
+      - .env
     environment:
       - DISPLAY=${DISPLAY}
+      - TZ=Asia/Taipei
     ipc: host
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - ./:/workspace
       - ./output_images:/workspace/output
+      - ./credentials.json:/workspace/credentials.json:ro
     command: ["python3", "-m", "train_detect.main"]
     networks:
       - mynetwork
