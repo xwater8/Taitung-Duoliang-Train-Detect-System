@@ -1,0 +1,22 @@
+name: Deploy web to gh-pages
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'web/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy web folder to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web
