@@ -1,30 +1,31 @@
 """
-上傳模組 - 處理圖片上傳至 imgur 及資料寫入 Google Sheets
+上傳模組 - 處理圖片上傳至 imgbb 及資料寫入 Google Sheets
 """
 import os
 import requests
+import base64
 import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 import time
 
 
-class ImgurUploader:
-    """imgur 圖片上傳類別"""
+class ImgbbUploader:
+    """imgbb 圖片上傳類別"""
     
-    def __init__(self, client_id):
+    def __init__(self, api_key):
         """
-        初始化 imgur 上傳器
+        初始化 imgbb 上傳器
         
         Args:
-            client_id: imgur API Client ID
+            api_key: imgbb API Key
         """
-        self.client_id = client_id
-        self.api_url = "https://api.imgur.com/3/image"
+        self.api_key = api_key
+        self.api_url = "https://api.imgbb.com/1/upload"
     
     def upload_image(self, image_path, max_retries=3):
         """
-        上傳圖片至 imgur
+        上傳圖片至 imgbb
         
         Args:
             image_path: 圖片檔案路徑
@@ -40,33 +41,50 @@ class ImgurUploader:
                 'error': f'File not found: {image_path}'
             }
         
-        headers = {
-            'Authorization': f'Client-ID {self.client_id}'
-        }
+        # 檢查檔案大小（imgbb 限制 32MB）
+        file_size = os.path.getsize(image_path)
+        if file_size > 32 * 1024 * 1024:
+            return {
+                'success': False,
+                'url': None,
+                'error': f'File size ({file_size / 1024 / 1024:.2f}MB) exceeds 32MB limit'
+            }
         
         for attempt in range(max_retries):
             try:
+                # 讀取圖片並轉換為 base64
                 with open(image_path, 'rb') as img_file:
-                    response = requests.post(
-                        self.api_url,
-                        headers=headers,
-                        files={'image': img_file},
-                        timeout=30
-                    )
+                    image_data = base64.b64encode(img_file.read()).decode('utf-8')
+                
+                # 產生圖片名稱
+                filename = os.path.basename(image_path)
+                name = os.path.splitext(filename)[0]
+                
+                payload = {
+                    'key': self.api_key,
+                    'image': image_data,
+                    'name': name
+                }
+                
+                response = requests.post(
+                    self.api_url,
+                    data=payload,
+                    timeout=30
+                )
                 
                 if response.status_code == 200:
                     data = response.json()
                     if data.get('success'):
                         return {
                             'success': True,
-                            'url': data['data']['link'],
+                            'url': data['data']['url'],
                             'error': None
                         }
                     else:
                         return {
                             'success': False,
                             'url': None,
-                            'error': f"imgur API error: {data.get('data', {}).get('error', 'Unknown error')}"
+                            'error': f"imgbb API error: {data.get('error', {}).get('message', 'Unknown error')}"
                         }
                 else:
                     error_msg = f"HTTP {response.status_code}: {response.text}"
@@ -214,18 +232,18 @@ class GoogleSheetsWriter:
 class TrainDetectionUploader:
     """整合上傳類別 - 處理火車偵測結果的完整上傳流程"""
     
-    def __init__(self, imgur_client_id, gsheet_credentials_path, gsheet_spreadsheet_id, 
+    def __init__(self, imgbb_api_key, gsheet_credentials_path, gsheet_spreadsheet_id, 
                  gsheet_worksheet_name='工作表1'):
         """
         初始化上傳器
         
         Args:
-            imgur_client_id: imgur API Client ID
+            imgbb_api_key: imgbb API Key
             gsheet_credentials_path: Google Sheets Service Account 金鑰路徑
             gsheet_spreadsheet_id: Google Sheet ID
             gsheet_worksheet_name: 工作表名稱
         """
-        self.imgur_uploader = ImgurUploader(imgur_client_id)
+        self.imgbb_uploader = ImgbbUploader(imgbb_api_key)
         self.gsheet_writer = GoogleSheetsWriter(
             gsheet_credentials_path,
             gsheet_spreadsheet_id,
@@ -281,29 +299,29 @@ class TrainDetectionUploader:
         if not self.should_upload(event_id):
             return {
                 'success': False,
-                'imgur_url': None,
+                'image_url': None,
                 'sheet_updated': False,
                 'errors': ['Duplicate event - skipped to prevent redundant uploads']
             }
         
         errors = []
-        imgur_url = None
+        image_url = None
         sheet_updated = False
         
-        # 步驟 1: 上傳圖片至 imgur
-        print(f"Uploading image to imgur: {image_path}")
-        imgur_result = self.imgur_uploader.upload_image(image_path)
+        # 步驟 1: 上傳圖片至 imgbb
+        print(f"Uploading image to imgbb: {image_path}")
+        imgbb_result = self.imgbb_uploader.upload_image(image_path)
         
-        if imgur_result['success']:
-            imgur_url = imgur_result['url']
-            print(f"✓ Image uploaded successfully: {imgur_url}")
+        if imgbb_result['success']:
+            image_url = imgbb_result['url']
+            print(f"✓ Image uploaded successfully: {image_url}")
         else:
-            errors.append(f"imgur upload failed: {imgur_result['error']}")
-            print(f"✗ imgur upload failed: {imgur_result['error']}")
+            errors.append(f"imgbb upload failed: {imgbb_result['error']}")
+            print(f"✗ imgbb upload failed: {imgbb_result['error']}")
             # 如果圖片上傳失敗，不繼續寫入 Google Sheets
             return {
                 'success': False,
-                'imgur_url': None,
+                'image_url': None,
                 'sheet_updated': False,
                 'errors': errors
             }
@@ -313,7 +331,7 @@ class TrainDetectionUploader:
         time_str = timestamp.strftime('%H:%M:%S')
         
         print(f"Writing data to Google Sheets...")
-        sheet_result = self.gsheet_writer.append_row(date_str, time_str, imgur_url, note)
+        sheet_result = self.gsheet_writer.append_row(date_str, time_str, image_url, note)
         
         if sheet_result['success']:
             sheet_updated = True
@@ -323,11 +341,11 @@ class TrainDetectionUploader:
             print(f"✗ Google Sheets write failed: {sheet_result['error']}")
         
         # 整體成功：圖片上傳成功且 Sheet 寫入成功
-        overall_success = imgur_result['success'] and sheet_result['success']
+        overall_success = imgbb_result['success'] and sheet_result['success']
         
         return {
             'success': overall_success,
-            'imgur_url': imgur_url,
+            'image_url': image_url,
             'sheet_updated': sheet_updated,
             'errors': errors if errors else None
         }

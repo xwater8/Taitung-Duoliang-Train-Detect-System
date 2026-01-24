@@ -20,6 +20,8 @@ services:
     restart: unless-stopped
     depends_on:
       - mediamtx
+    env_file:
+      - .env
     environment:
       - DISPLAY=${DISPLAY}
     ipc: host
@@ -27,6 +29,7 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - ./:/workspace
       - ./output_images:/workspace/output
+      - ./credentials.json:/workspace/credentials.json:ro
     command: ["python3", "-m", "train_detect.main"]
     networks:
       - mynetwork

@@ -39,7 +39,7 @@ def get_config():
     conf.show_debug_img= False
     
     # API 配置 - 從環境變數讀取
-    conf.imgur_client_id = os.environ.get('IMGUR_CLIENT_ID', '')
+    conf.imgbb_api_key = os.environ.get('IMGBB_API_KEY', '')
     conf.gsheet_credentials_path = os.environ.get('GSHEET_CREDENTIALS_PATH', './credentials.json')
     conf.gsheet_spreadsheet_id = os.environ.get('GSHEET_SPREADSHEET_ID', '')
     conf.gsheet_worksheet_name = os.environ.get('GSHEET_WORKSHEET_NAME', '工作表1')

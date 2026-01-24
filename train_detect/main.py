@@ -62,7 +62,7 @@ def main():
     if conf.enable_upload:
         try:
             uploader = TrainDetectionUploader(
-                imgur_client_id=conf.imgur_client_id,
+                imgbb_api_key=conf.imgbb_api_key,
                 gsheet_credentials_path=conf.gsheet_credentials_path,
                 gsheet_spreadsheet_id=conf.gsheet_spreadsheet_id,
                 gsheet_worksheet_name=conf.gsheet_worksheet_name
@@ -192,7 +192,7 @@ def main():
                             note='台東多良車站'
                         )
                         if upload_result['success']:
-                            print(f"✓ 上傳成功: {upload_result['imgur_url']}")
+                            print(f"✓ 上傳成功: {upload_result['image_url']}")
                         else:
                             print(f"✗ 上傳失敗: {upload_result['errors']}")
                     except Exception as e:

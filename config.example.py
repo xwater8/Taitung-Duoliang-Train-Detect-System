@@ -44,9 +44,11 @@ def get_config():
     # 2. 在 Docker Compose 中設定環境變數
     # 3. 使用 .env 檔案（需安裝 python-dotenv）
     
-    # imgur API Client ID
-    # 取得方式：https://api.imgur.com/oauth2/addclient
-    conf.imgur_client_id = os.environ.get('IMGUR_CLIENT_ID', '')
+    # imgbb API Key
+    # 取得方式：
+    # 1. 註冊 https://imgbb.com/
+    # 2. 前往 https://api.imgbb.com/ 取得 API Key
+    conf.imgbb_api_key = os.environ.get('IMGBB_API_KEY', '')
     
     # Google Sheets Service Account 金鑰檔案路徑
     # 取得方式：
