@@ -1,1 +1,41 @@
 *.pyc
+
+# Google Credentials - 重要：不要提交 API 金鑰！
+credentials.json
+*-credentials.json
+service-account*.json
+
+# 環境變數
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Output
+output/
+output_images/
