@@ -770,7 +770,7 @@ paths:
   youtube_train:
     #runOnDemand: >
     runOnInit: >
-     sh -c 'yt-dlp -f 96 --fragment-retries 10 --retry-sleep 3 -o - "https://www.youtube.com/watch?v=UCG1aXVO8H8" |
+     sh -c 'yt-dlp -f 95 --fragment-retries 10 --retry-sleep 3 -o - "https://www.youtube.com/watch?v=UCG1aXVO8H8" |
      ffmpeg -re -i pipe:0 -c:v copy -an -muxdelay 0.2
      -f rtsp -rtsp_transport tcp rtsp://localhost:8554/youtube_train'
     runOnInitRestart: yes

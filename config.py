@@ -15,7 +15,7 @@ def get_config():
     
     conf.video_path= "rtsp://mediamtx:8554/youtube_train"
     
-    conf.resize_ratio= 0.7
+    conf.resize_ratio= 1.0
     conf.output_root= "./output"
     conf.output_train_img_folder= os.path.join(conf.output_root, "train_img")
     conf.output_background_img_folder= os.path.join(conf.output_root, "background_img")
