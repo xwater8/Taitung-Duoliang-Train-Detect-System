@@ -78,6 +78,8 @@ class ImgbbUploader:
                         return {
                             'success': True,
                             'url': data['data']['url'],
+                            'thumb_url': data['data']['thumb']['url'],
+                            'medium_url': data['data']['medium']['url'],
                             'error': None
                         }
                     else:
@@ -181,14 +183,15 @@ class GoogleSheetsWriter:
                 'error': f'Connection error: {str(e)}'
             }
     
-    def append_row(self, date_str, time_str, imgur_url, note='', max_retries=3):
+    def append_row(self, date_str, time_str, imgur_url, thumbnail_url='', note='', max_retries=3):
         """
         新增一列資料至 Google Sheets
         
         Args:
             date_str: 日期字串 (YYYY-MM-DD)
             time_str: 時間字串 (HH:MM:SS)
-            imgur_url: imgur 圖片連結
+            imgur_url: imgur 圖片連結（原圖）
+            thumbnail_url: 縮略圖連結
             note: 備註
             max_retries: 最大重試次數
             
@@ -200,7 +203,7 @@ class GoogleSheetsWriter:
             if not connect_result['success']:
                 return connect_result
         
-        row_data = [date_str, time_str, imgur_url, note]
+        row_data = [date_str, time_str, imgur_url, thumbnail_url, note]
         
         for attempt in range(max_retries):
             try:
@@ -314,7 +317,9 @@ class TrainDetectionUploader:
         
         if imgbb_result['success']:
             image_url = imgbb_result['url']
+            thumbnail_url = imgbb_result.get('thumb_url', '')
             print(f"✓ Image uploaded successfully: {image_url}")
+            print(f"✓ Thumbnail URL: {thumbnail_url}")
         else:
             errors.append(f"imgbb upload failed: {imgbb_result['error']}")
             print(f"✗ imgbb upload failed: {imgbb_result['error']}")
@@ -331,7 +336,7 @@ class TrainDetectionUploader:
         time_str = timestamp.strftime('%H:%M:%S')
         
         print(f"Writing data to Google Sheets...")
-        sheet_result = self.gsheet_writer.append_row(date_str, time_str, image_url, note)
+        sheet_result = self.gsheet_writer.append_row(date_str, time_str, image_url, thumbnail_url, note)
         
         if sheet_result['success']:
             sheet_updated = True
