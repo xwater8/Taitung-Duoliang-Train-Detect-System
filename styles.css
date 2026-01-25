@@ -43,6 +43,35 @@ body {
     color: var(--white);
     padding: 40px 30px;
     text-align: center;
+    position: relative;
+}
+
+.github-link {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--white);
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px 16px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+}
+
+.github-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.github-link svg {
+    width: 24px;
+    height: 24px;
 }
 
 .header h1 {
@@ -474,6 +503,27 @@ tbody td:first-child {
     opacity: 0.8;
 }
 
+.footer-github {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.footer-github a {
+    color: var(--white);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.footer-github a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
 /* ===== 響應式設計 ===== */
 @media (max-width: 768px) {
     .header h1 {
@@ -482,6 +532,22 @@ tbody td:first-child {
     
     .subtitle {
         font-size: 0.95rem;
+    }
+    
+    .github-link {
+        top: 10px;
+        right: 10px;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .github-link span {
+        display: none;
+    }
+    
+    .github-link svg {
+        width: 20px;
+        height: 20px;
     }
     
     .stats-panel {
