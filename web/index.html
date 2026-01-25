@@ -77,6 +77,45 @@
             </table>
         </div>
 
+        <!-- 分頁控制區 -->
+        <div class="pagination-container">
+            <!-- 分頁資訊顯示 -->
+            <div class="pagination-info">
+                <span id="paginationInfo">第 1 頁，共 1 頁，顯示第 1-20 筆，共 0 筆</span>
+            </div>
+            
+            <!-- 每頁筆數選擇 -->
+            <div class="pagination-controls">
+                <div class="per-page-selector">
+                    <label for="itemsPerPage">每頁顯示：</label>
+                    <select id="itemsPerPage">
+                        <option value="10">10 筆</option>
+                        <option value="20" selected>20 筆</option>
+                        <option value="30">30 筆</option>
+                        <option value="40">40 筆</option>
+                        <option value="50">50 筆</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 分頁按鈕區域 -->
+            <div class="pagination-buttons">
+                <button id="prevBtn" class="pagination-btn pagination-nav" disabled>
+                    <span class="btn-icon">‹</span>
+                    <span class="btn-text">上一頁</span>
+                </button>
+                
+                <div id="pageNumbers" class="page-numbers">
+                    <!-- 頁碼按鈕將由 JavaScript 動態生成 -->
+                </div>
+                
+                <button id="nextBtn" class="pagination-btn pagination-nav" disabled>
+                    <span class="btn-text">下一頁</span>
+                    <span class="btn-icon">›</span>
+                </button>
+            </div>
+        </div>
+
         <!-- 無資料提示 -->
         <div id="noDataMessage" class="no-data-message" style="display: none;">
             <p>📭 目前沒有符合條件的資料</p>
