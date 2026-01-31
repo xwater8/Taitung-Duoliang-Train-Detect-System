@@ -1,17 +1,19 @@
-# Introduction - 台東多良車站火車偵測系統
+# Introduction - 台東多良車站火車偵測系統(SideProject)
 
-本專案是來偵測台東多良車站的火車何時出現在畫面中，方便觀察有哪些種類的火車。以及發現在 YouTube 上有網友整理的火車時刻表，將來或許可以取代他們。讓喜歡火車的網友可以根據時間去進行回放，以及觀察到有部分火車沒有出現在時刻表上！
+本專案是來偵測台東多良車站的火車何時出現在畫面中，方便觀察有哪些種類的火車。讓喜歡火車的網友可以根據時間去youtube進行回放，以及觀察到有部分火車沒有出現在網友提供的時刻表上！例如有時候可以觀察到單節火車頭在鐵軌上。本次挑戰在 RaspberryPi4 上面運作，所以嘗試使用傳統影像處理。
+
+本專案目前目標是盡可能不要漏掉每輛火車，所以短時間內畫面變化大會被誤判為有火車是正常情況。
+
+p.s本專案並非官方提供的服務，所以可能會隨時終止，但是有興趣的人可以把專案fork回去自行部屬使用。
 
 台東多良車站即時影像 Taitung Duoliang Station Live Camera
 https://www.youtube.com/watch?v=UCG1aXVO8H8
-
-本次挑戰在 RaspberryPi 上面運作，所以嘗試使用傳統影像處理。
 
 本專案使用 Docker 環境下確定可以在 x86 與 Raspberry Pi 4 上面正常運行
 
 ![alt text](./docs/image.png)
 
-[Youtube 影片](https://youtu.be/V8ZHeCWi8-8)
+[Youtube Demo影片](https://youtu.be/V8ZHeCWi8-8)
 
 [報表系統網址](https://xwater8.github.io/Taitung-Duoliang-Train-Detect-System/)
 
