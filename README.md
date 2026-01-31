@@ -19,6 +19,9 @@ https://www.youtube.com/watch?v=UCG1aXVO8H8
 
 ## 專案結構
 
+train_detect屬於由自己撰寫的影像辨識
+web屬於由github copilot生成的前端網頁
+
 ```
 train_detect/
 ├── web/                              # 前端網頁儀表板
@@ -138,7 +141,7 @@ $python3 main.py
 | `train_polygon` | 火車偵測區域的多邊形座標（四個頂點：左上、右上、右下、左下），以 1920×1080 解析度為基準進行正規化（座標值除以寬高），實際執行時會根據影像大小自動縮放 |
 
 > [!TIP]
-> 可在執行時開啟視窗，根據實際畫面調整多邊形區域，只偵測鐵軌所在區域以減少誤報。
+> 根據實際畫面調整多邊形區域，只偵測鐵軌所在區域以減少誤報。
 
 ### 顯示選項
 
@@ -162,6 +165,8 @@ $python3 main.py
 
 > [!IMPORTANT]
 > 使用 Google Sheets 功能前，需先在 Google Cloud Console 啟用 **Google Sheets API** 和 **Google Drive API**，並將 Service Account 的電子郵件地址加入試算表的共用權限。
+> 相關說明可以參考[DEPLOYMENT.md](./web/DEPLOYMENT.md)
+
 
 ### 配置範例
 
