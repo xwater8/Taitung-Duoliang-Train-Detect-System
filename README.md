@@ -39,7 +39,7 @@ train_detect/
 
 
 ## 如何安裝與使用
-### 方法1: docker啟動服務
+### 方法1: docker啟動服務(youtube轉rtsp串流+辨識服務)
 ```
 $xhost + #開啟xhost權限, 讓opencv視窗可以從docker內部開啟
 $docker compose up -d
