@@ -21,20 +21,40 @@ https://www.youtube.com/watch?v=UCG1aXVO8H8
 
 ```
 train_detect/
-├── web/                         # 前端網頁儀表板
-│   ├── index.html               # 主要頁面
-│   ├── app.js                   # JavaScript 邏輯
-│   ├── styles.css               # CSS 樣式
-│   ├── README.md                # 前端說明
-│   └── DEPLOYMENT.md            # 部署指南
-├── train_detect/                # 後端偵測系統
-│   ├── main.py                  # 主程式
-│   ├── uploader.py              # 上傳模組
-│   └── toolbox/                 # 工具函式庫
-├── docker/                      # Docker 相關檔案
-├── config.py                    # 設定檔
-├── README.md                    # 本檔案
-└── ...
+├── web/                              # 前端網頁儀表板
+│   ├── index.html                    # 主要頁面
+│   ├── app.js                        # JavaScript 邏輯
+│   ├── styles.css                    # CSS 樣式
+│   ├── web_readme.md                 # 前端說明
+│   └── DEPLOYMENT.md                 # 部署指南
+├── train_detect/                     # 後端偵測系統
+│   ├── __init__.py                   # 模組初始化
+│   ├── main.py                       # 主程式（包含 EMA 背景建模與火車偵測邏輯）
+│   ├── uploader.py                   # 上傳模組（imgbb + Google Sheets）
+│   └── toolbox/                      # 工具函式庫
+│       ├── __init__.py               # 工具模組初始化
+│       ├── bbox.py                   # 邊界框處理
+│       ├── log.py                    # 日誌記錄
+│       ├── utils.py                  # 通用工具函式
+│       └── video_stream.py           # 影像串流處理
+├── docker/                           # Docker 相關檔案
+│   ├── train_detect.dockerfile       # 辨識服務 Dockerfile
+│   ├── mediamtx.dockerfile           # MediaMTX 串流服務 Dockerfile
+│   ├── mediamtx.yml                  # MediaMTX 設定檔
+│   ├── detect_train.service          # Systemd 服務檔
+│   └── requirements.txt              # Python 依賴套件
+├── output/                           # 輸出資料夾
+│   ├── train_img/                    # 火車偵測圖片
+│   └── background_img/               # 背景圖片
+├── logs/                             # 日誌資料夾
+│   └── Log.txt                       # 運行日誌
+├── docs/                             # 文件資料夾
+├── config.example.py                 # 設定檔範例
+├── config.py                         # 實際設定檔（需自行建立）
+├── credentials.json                  # Google Sheets 認證檔（需自行建立）
+├── docker-compose.yml                # Docker Compose 設定
+├── test_upload.py                    # 上傳功能測試
+└── README.md                         # 本檔案
 ```
 
 
@@ -91,34 +111,72 @@ $python3 main.py
 
 ## config.py 參數說明
 
-本專案透過 `config.py` 的 `get_config()` 函式統一管理所有參數設定。主要配置項目如下：
+本專案透過 `config.py` 的 `get_config()` 函式統一管理所有參數設定。請複製 `config.example.py` 為 `config.py` 並根據需求調整。主要配置項目如下：
 
 ### 資料來源與輸出
 
-- **video_path**：影片來源，可為本地路徑或 RTSP 串流（如 `rtsp://mediamtx:8554/youtube_train`）
-- **resize_ratio**：影像縮放比例（預設 0.7）
-- **output_root**：輸出資料夾根目錄（預設 `./output`）
-- **output_train_img_folder**：檢測到火車時的圖片保存路徑
-- **output_background_img_folder**：背景圖片保存路徑
+| 參數 | 說明 | 預設值 | 範例 |
+|------|------|--------|------|
+| `video_path` | 影片來源，可為本地路徑或 RTSP 串流 | `rtsp://mediamtx:8554/youtube_train` | 本地：`data/video.mp4`<br>串流：`rtsp://192.168.1.108:8554/youtube_train` |
+| `resize_ratio` | 影像縮放比例，用於降低運算負擔 | `0.7` | 0.5 ~ 1.0 |
+| `output_root` | 輸出資料夾根目錄 | `./output` | 可設為絕對路徑 |
+| `output_train_img_folder` | 檢測到火車時的圖片保存路徑 | `./output/train_img` | 自動從 `output_root` 組合 |
+| `output_background_img_folder` | 背景圖片定期保存路徑 | `./output/background_img` | 自動從 `output_root` 組合 |
 
 ### 演算法參數
 
-- **binary_threshold**：二值化處理的閾值（預設 30），用於前景背景分離
-- **diff_ratio_threshold**：畫面變化率判斷火車經過的門檻（預設 0.1）
-- **ssim_threshold**：SSIM 相似度門檻（預設 0.70），低於此值判定為火車經過
-- **vote_count**：投票法窗口大小（預設 10），用於平滑化判斷結果，減少誤報
-- **too_light_pixel_threshold**：過亮像素判斷閾值（預設 210），過亮區域不納入相似度計算
+| 參數 | 說明 | 預設值 | 調整建議 |
+|------|------|--------|----------|
+| `ssim_threshold` | SSIM 相似度門檻，低於此值判定為火車經過 | `0.70` | 範圍 0.0 ~ 1.0，降低可減少漏報但增加誤報 |
+| `vote_count` | 投票法窗口大小，用於平滑化判斷結果 | `10` | 增加可減少誤報，但會延遲反應時間 |
+| `too_light_pixel_threshold` | 過亮像素判斷閾值（0-255） | `210` | 過亮區域不納入相似度計算，避免反光干擾 |
 
 ### 火車偵測區域
 
-- **train_polygon**：火車偵測區域的多邊形座標，以 1920×1080 解析度正規化（左上、右上、右下、左下四個頂點），僅在此區域內檢測火車
+| 參數 | 說明 |
+|------|------|
+| `train_polygon` | 火車偵測區域的多邊形座標（四個頂點：左上、右上、右下、左下），以 1920×1080 解析度為基準進行正規化（座標值除以寬高），實際執行時會根據影像大小自動縮放 |
+
+> [!TIP]
+> 可在執行時開啟視窗，根據實際畫面調整多邊形區域，只偵測鐵軌所在區域以減少誤報。
 
 ### 顯示選項
 
-- **show_img**：是否顯示主處理畫面（預設 True）
-- **show_debug_img**：是否顯示除錯畫面（預設 False）
+| 參數 | 說明 | 預設值 |
+|------|------|--------|
+| `show_img` | 是否顯示主處理畫面（含偵測框與資訊） | `True` |
+| `show_debug_img` | 是否顯示除錯畫面（差異圖、二值化圖等） | `False` |
 
-根據實際使用環境，可調整上述參數以優化偵測效果。
+> [!NOTE]
+> Docker 環境下若需顯示視窗，請確保已執行 `xhost +` 開啟 X11 權限。
+
+### API 與上傳設定
+
+| 參數 | 說明 | 環境變數 | 取得方式 |
+|------|------|----------|----------|
+| `imgbb_api_key` | imgbb 圖片上傳 API Key | `IMGBB_API_KEY` | 註冊 [imgbb.com](https://imgbb.com/) 並至 [API 頁面](https://api.imgbb.com/) 取得 |
+| `gsheet_credentials_path` | Google Sheets Service Account JSON 金鑰路徑 | `GSHEET_CREDENTIALS_PATH` | 至 [Google Cloud Console](https://console.cloud.google.com/) 建立 Service Account 並下載 JSON 金鑰 |
+| `gsheet_spreadsheet_id` | Google Spreadsheet ID | `GSHEET_SPREADSHEET_ID` | 從試算表網址取得：`https://docs.google.com/spreadsheets/d/{ID}/edit` |
+| `gsheet_worksheet_name` | Google Sheets 工作表名稱 | `GSHEET_WORKSHEET_NAME` | 預設 `工作表1` |
+| `enable_upload` | 是否啟用上傳功能 | `ENABLE_UPLOAD` | 設為 `true` 啟用，`false` 則僅本地儲存 |
+
+> [!IMPORTANT]
+> 使用 Google Sheets 功能前，需先在 Google Cloud Console 啟用 **Google Sheets API** 和 **Google Drive API**，並將 Service Account 的電子郵件地址加入試算表的共用權限。
+
+### 配置範例
+
+```python
+# 基本使用（僅本地偵測）
+conf.video_path = "rtsp://mediamtx:8554/youtube_train"
+conf.enable_upload = False
+
+# 啟用上傳功能
+conf.enable_upload = True
+conf.imgbb_api_key = "your_imgbb_api_key"
+conf.gsheet_spreadsheet_id = "your_spreadsheet_id"
+```
+
+根據實際使用環境與需求，可調整上述參數以優化偵測效果。
 
 
 
