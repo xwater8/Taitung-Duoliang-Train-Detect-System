@@ -19,8 +19,6 @@ def get_config():
     conf.output_root= "./output"
     conf.output_train_img_folder= os.path.join(conf.output_root, "train_img")
     conf.output_background_img_folder= os.path.join(conf.output_root, "background_img")
-    conf.binary_threshold= 30  #二值化閾值
-    conf.diff_ratio_threshold= 0.1  #火車經過的變化率閾值
     
     conf.ssim_threshold= 0.70  #SSIM相似度閾值
     conf.vote_count= 10  #投票法的窗口大小
